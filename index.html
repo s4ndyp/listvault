@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ListVault Cloud</title>
+    <title>ListVault Pro - Dynamic Grid</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.4/dexie.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    
-    <link rel="stylesheet" href="styles.css">
+    <script src="offline_managerv2.js"></script>
 
     <script>
         tailwind.config = {
@@ -18,293 +19,157 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: 'rgb(var(--color-primary) / <alpha-value>)', 
-                        secondary: '#10b981',
-                        dark: '#0f172a', 
-                        dark_paper: '#1e293b', 
-                        accent: '#8b5cf6'
+                        'dark-bg': '#0F111A',
+                        'card-bg': '#1E2130',
+                        'primary-purple': '#8B5CF6',
+                        'border-color': 'rgba(255, 255, 255, 0.08)'
                     },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
+                    fontSize: { 'xxs': '0.65rem' }
                 }
             }
         }
     </script>
+
     <style>
-        /* Responsive table layout */
-        .table-auto-responsive {
-            table-layout: auto;
-            width: 100%;
-        }
-        /* Cel breedte limitatie */
-        .truncate-cell {
-            max-width: 140px; 
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        @media (min-width: 768px) {
-            .truncate-cell {
-                max-width: 300px;
-            }
-        }
-        
-        /* Sticky Header Styling */
-        thead th {
-            position: sticky;
-            top: 0;
-            z-index: 50; /* Hoog genoeg zodat content eronderdoor gaat */
-            /* Border bottom direct op de TH zorgt dat de lijn mee plakt */
-            border-bottom: 1px solid #374151; /* gray-700 */
-        }
+        body { font-family: 'Inter', sans-serif; }
+        [v-cloak] { display: none; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 10px; }
+        .glass-header { background: rgba(15, 17, 26, 0.85); backdrop-filter: blur(12px); }
+        .column-header { background-color: #1E2130; border-bottom: 2px solid rgba(139, 92, 246, 0.2); }
     </style>
 </head>
-<body class="h-full text-gray-200 font-sans bg-dark transition-colors duration-300 overflow-hidden">
+<body class="h-full bg-dark-bg text-gray-300 overflow-hidden">
 
-<div id="app" v-cloak class="flex flex-col h-screen relative">
+<div id="app" v-cloak class="flex h-screen overflow-hidden">
 
-    <div v-if="!isAuthenticated" class="fixed inset-0 z-[200] bg-dark flex items-center justify-center p-4">
-        <div class="bg-dark_paper w-full max-w-md p-8 rounded-2xl border border-gray-700 shadow-2xl">
-            <div class="flex flex-col items-center mb-6">
-                <div class="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg mb-4">
-                    <i class="fas fa-vault"></i>
-                </div>
-                <h1 class="text-2xl font-bold text-white">ListVault</h1>
+    <div :class="['fixed md:relative z-[60] h-full w-72 bg-card-bg border-r border-border-color transition-transform duration-300 flex flex-col', showMobileMenu ? 'translate-x-0' : '-translate-x-full md:translate-x-0']">
+        <div class="p-4 flex justify-between items-center h-16 shrink-0 border-b border-border-color">
+            <div class="font-bold text-white flex items-center gap-2">
+                <i class="fas fa-vault text-primary-purple"></i> ListVault
             </div>
-            <form @submit.prevent="handleLogin" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Gebruikersnaam</label>
-                    <input v-model="loginForm.username" type="text" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white focus:border-primary focus:outline-none transition" required>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Wachtwoord</label>
-                    <input v-model="loginForm.password" type="password" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white focus:border-primary focus:outline-none transition" required>
-                </div>
-                <div v-if="loginError" class="text-red-400 text-xs bg-red-400/10 p-2 rounded border border-red-400/20 text-center">{{ loginError }}</div>
-                <button type="submit" :disabled="isLoading" class="w-full py-3 bg-primary hover:opacity-90 text-white font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                    <span v-if="isLoading"><i class="fas fa-spinner fa-spin"></i></span>
-                    <span v-else>Inloggen</span>
-                </button>
-            </form>
+            <button @click="showMobileMenu = false" class="md:hidden text-gray-400"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="p-3">
+            <input v-model="sidebarSearch" placeholder="Lijst zoeken..." class="w-full bg-dark-bg/50 border border-border-color rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary-purple transition-all">
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-2 space-y-1">
+            <div v-for="list in sidebarFilteredLists" :key="list.id" @click="selectList(list)" 
+                 :class="['flex items-center px-3 py-2 text-sm rounded-md cursor-pointer transition-all', 
+                          currentList && currentList.id === list.id ? 'bg-primary-purple/20 text-white' : 'hover:bg-white/5']">
+                <i :class="['fas fa-table mr-3 text-xs', list.isFavorite ? 'text-yellow-500' : 'text-gray-500']"></i>
+                <span class="truncate">{{ list.name }}</span>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-border-color bg-card-bg/50 grid grid-cols-2 gap-2">
+            <button @click="startCreateList" class="py-2 bg-primary-purple text-white rounded-lg text-xs font-bold">Nieuw</button>
+            <label class="py-2 bg-dark-bg border border-border-color text-center rounded-lg text-xs font-bold cursor-pointer">
+                Import <input type="file" @change="handleImportCSV" class="hidden" accept=".csv">
+            </label>
         </div>
     </div>
 
-    <div v-else class="flex h-full overflow-hidden relative">
+    <div class="flex-1 flex flex-col bg-dark-bg overflow-hidden relative">
         
-        <div :class="['fixed md:relative z-[60] h-full w-80 bg-dark_paper border-r border-gray-700 transition-transform duration-300 flex flex-col shadow-2xl md:shadow-none', showMobileMenu ? 'translate-x-0' : '-translate-x-full md:translate-x-0']">
-            <div class="p-4 border-b border-gray-700 flex justify-between items-center">
-                <div class="font-bold text-lg text-white flex items-center gap-2">
-                    <i class="fas fa-vault text-primary"></i> ListVault
-                </div>
-                <button @click="showMobileMenu = false" class="md:hidden text-gray-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
-            </div>
+        <button @click="showMobileMenu = true" class="md:hidden fixed bottom-6 right-6 z-50 w-12 h-12 bg-primary-purple text-white rounded-full shadow-lg flex items-center justify-center">
+            <i class="fas fa-bars"></i>
+        </button>
 
-            <div class="p-4 space-y-2">
-                <input v-model="sidebarSearch" placeholder="Zoek lijst naam..." class="w-full bg-dark border border-gray-600 rounded-lg px-3 py-2 text-sm focus:border-primary focus:outline-none">
-            </div>
-
-            <div class="flex-1 overflow-y-auto p-2 space-y-1">
-                <div v-if="favoriteLists.length > 0" class="mb-4">
-                    <div class="text-xs font-bold text-gray-500 uppercase px-2 mb-2">Favorieten</div>
-                    <div v-for="list in favoriteLists" :key="list.id" @click="selectList(list)" :class="['p-3 rounded-lg cursor-pointer flex justify-between items-center group transition', currentList && currentList.id === list.id ? 'bg-primary/20 text-white border border-primary/50' : 'hover:bg-gray-700 text-gray-300']">
-                        <div class="truncate font-medium"><i class="fas fa-star text-yellow-500 mr-2"></i>{{ list.name }}</div>
+        <div v-if="currentList" class="flex flex-col h-full overflow-hidden">
+            
+            <div class="glass-header shrink-0 border-b border-border-color">
+                <div class="px-6 h-14 flex items-center justify-between">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <h2 class="text-lg font-bold text-white truncate">{{ currentList.name }}</h2>
+                        <button @click="toggleListFavorite(currentList)" class="text-xs">
+                            <i :class="['fas fa-star', currentList.isFavorite ? 'text-yellow-500' : 'text-gray-600']"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button v-if="hasHiddenColumns" @click="showAllColumns" class="text-xxs bg-primary-purple/20 text-primary-purple px-2 py-1 rounded hover:bg-primary-purple/30 transition-all">
+                            <i class="fas fa-eye mr-1"></i> Toon alle kolommen
+                        </button>
+                        <button @click="isEditMode = !isEditMode" :class="['px-3 py-1.5 rounded-md text-xs font-semibold border transition-all', isEditMode ? 'bg-orange-500/20 border-orange-500/50 text-orange-400' : 'bg-dark-bg border-border-color hover:border-gray-500']">
+                            <i class="fas fa-pen-nib mr-1"></i> {{ isEditMode ? 'Klaar' : 'Bewerk' }}
+                        </button>
+                        <button @click="addRow" class="bg-primary-purple text-white px-3 py-1.5 rounded-md text-xs font-bold shadow-md hover:bg-primary-purple/90 transition-all">
+                            <i class="fas fa-plus mr-1"></i> Rij
+                        </button>
                     </div>
                 </div>
-                <div class="text-xs font-bold text-gray-500 uppercase px-2 mb-2">Alle Lijsten</div>
-                <div v-if="sidebarFilteredLists.length === 0" class="text-center text-gray-500 py-4 text-sm">Geen lijsten</div>
-                <div v-for="list in sidebarFilteredLists" :key="list.id" @click="selectList(list)" :class="['p-3 rounded-lg cursor-pointer flex justify-between items-center group transition', currentList && currentList.id === list.id ? 'bg-primary/20 text-white border border-primary/50' : 'hover:bg-gray-700 text-gray-300']">
-                    <div class="flex items-center truncate">
-                        <i :class="['fas mr-3', list.isFavorite ? 'fa-star text-yellow-500' : 'fa-table text-gray-500']"></i>
-                        <span class="truncate">{{ list.name }}</span>
+
+                <div class="px-6 py-2 border-t border-border-color/50 flex gap-4 items-center">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-600 text-xs"></i>
+                        <input v-model="contentSearchQuery" placeholder="Zoek in deze lijst..." class="w-full bg-dark-bg/40 border border-border-color rounded-lg pl-8 pr-3 py-2 text-xs focus:outline-none focus:border-primary-purple transition-all">
                     </div>
-                    <div class="opacity-0 group-hover:opacity-100 transition flex gap-2">
-                        <button @click.stop="toggleListFavorite(list)" class="text-xs hover:text-yellow-400 text-gray-500"><i class="fas fa-star"></i></button>
+                    <div v-if="syncPending > 0" class="text-xxs text-orange-400 animate-pulse font-bold whitespace-nowrap">
+                        SYNCING...
                     </div>
                 </div>
             </div>
 
-            <div class="p-4 border-t border-gray-700 bg-dark/50">
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <button @click="startCreateList" class="py-2 bg-primary hover:bg-indigo-600 text-white rounded-lg text-sm font-bold shadow transition"><i class="fas fa-plus"></i> Nieuw</button>
-                    <label class="py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-bold shadow transition cursor-pointer text-center">
-                        <i class="fas fa-file-import"></i> Import
-                        <input type="file" ref="fileInput" @change="handleImportCSV" class="hidden" accept=".csv">
-                    </label>
+            <div v-if="isEditMode" class="px-6 py-2 bg-primary-purple/5 border-b border-primary-purple/20 overflow-x-auto flex items-center gap-3">
+                <span class="text-xxs font-bold text-primary-purple uppercase shrink-0">Breedtes (%):</span>
+                <div v-for="col in currentList.columns" :key="col" class="flex flex-col gap-1 shrink-0">
+                    <span class="text-xxs text-gray-500 truncate w-16">{{ col }}</span>
+                    <input type="number" v-model.number="currentList.columnSettings[col].width" @change="saveCurrentList" class="w-16 bg-dark-bg border border-border-color rounded px-1 text-xs text-white">
                 </div>
-                <button @click="handleLogout" class="w-full py-2 border border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-lg text-sm transition">Uitloggen</button>
+                <button @click="deleteList" class="ml-auto text-xxs text-red-400 bg-red-400/10 px-2 py-1 rounded border border-red-400/20">
+                    Lijst Verwijderen
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-auto relative custom-scrollbar" ref="scrollContainer">
+                
+                <div class="sticky top-0 z-30 flex items-center px-6 py-3 column-header text-xxs font-bold text-gray-400 uppercase tracking-widest">
+                    <div class="w-8 shrink-0 text-center">#</div>
+                    <div v-for="col in visibleColumns" :key="col" 
+                         :style="{ flex: `${getColumnWidth(col)} 0 0` }"
+                         class="px-2 flex items-center justify-between group">
+                        <span class="truncate">{{ col }}</span>
+                        <button @click="hideColumn(col)" class="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white transition-all">
+                            <i class="fas fa-eye-slash"></i>
+                        </button>
+                    </div>
+                    <div v-if="isEditMode" class="w-10 shrink-0"></div>
+                </div>
+
+                <div class="divide-y divide-border-color/50">
+                    <div v-for="(row, idx) in filteredRows" :key="idx" class="flex items-center px-6 py-2 hover:bg-white/[0.02] transition-colors group">
+                        <div class="w-8 shrink-0 text-center">
+                            <button @click="toggleRecordFavorite(row)" class="text-xs">
+                                <i :class="[row.isFavorite ? 'fas fa-star text-yellow-500' : 'far fa-star text-gray-700']"></i>
+                            </button>
+                        </div>
+
+                        <div v-for="col in visibleColumns" :key="col" 
+                             :style="{ flex: `${getColumnWidth(col)} 0 0` }"
+                             class="px-2 truncate">
+                            <input v-if="isEditMode" v-model="row[col]" @change="saveCurrentList" class="w-full bg-transparent border-b border-transparent focus:border-primary-purple/50 py-1 text-sm outline-none text-white">
+                            <div v-else class="text-sm py-1 truncate text-gray-300">{{ row[col] }}</div>
+                        </div>
+
+                        <div v-if="isEditMode" class="w-10 shrink-0 text-right">
+                            <button @click="deleteRow(idx)" class="text-gray-700 hover:text-red-500 transition-all">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="flex-1 flex flex-col bg-dark overflow-hidden relative w-full">
-            
-            <button @click="showMobileMenu = true" 
-                    class="md:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center text-xl hover:scale-110 transition-transform border border-white/10">
-                <i class="fas fa-bars"></i>
-            </button>
-
-            <div v-if="!currentList && !isCreating" class="flex-1 flex flex-col items-center justify-center text-gray-500">
-                <i class="fas fa-vault text-6xl mb-4 text-gray-700"></i>
-                <p class="text-lg">Selecteer een lijst</p>
-            </div>
-
-            <div v-if="isCreating" class="absolute inset-0 bg-dark z-50 p-6 overflow-y-auto">
-                <div class="max-w-3xl mx-auto bg-dark_paper rounded-2xl border border-gray-700 p-8 shadow-2xl">
-                    <h2 class="text-2xl font-bold text-white mb-6">Nieuwe Lijst</h2>
-                    <div class="space-y-6">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-gray-400 text-sm mb-1">Naam</label>
-                                <input v-model="newList.name" type="text" class="w-full bg-dark border border-gray-600 rounded-lg p-2 text-white">
-                            </div>
-                            <div>
-                                <label class="block text-gray-400 text-sm mb-1">Tags</label>
-                                <input v-model="newList.tagsInput" type="text" class="w-full bg-dark border border-gray-600 rounded-lg p-2 text-white">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-gray-400 text-sm mb-2">Kolommen</label>
-                            <div class="flex gap-2 mb-2">
-                                <input v-model="newColumnName" @keyup.enter="addColumn" type="text" placeholder="Kolom naam" class="flex-1 bg-dark border border-gray-600 rounded-lg p-2 text-white">
-                                <button @click="addColumn" class="px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"><i class="fas fa-plus"></i></button>
-                            </div>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <span v-for="(col, idx) in newList.columns" :key="idx" class="px-3 py-1 bg-primary/20 border border-primary/40 rounded-full text-white text-sm flex items-center gap-2">
-                                    {{ col }} <button @click="removeColumn(idx)" class="text-red-300 hover:text-white"><i class="fas fa-times"></i></button>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="flex justify-end gap-3 pt-4 border-t border-gray-700">
-                            <button @click="cancelCreate" class="px-4 py-2 text-gray-400 hover:text-white">Annuleren</button>
-                            <button @click="saveNewList" class="px-6 py-2 bg-primary text-white font-bold rounded-lg shadow-lg hover:opacity-90">Opslaan</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div v-if="currentList && !isCreating" class="flex-1 flex flex-col h-full overflow-hidden">
-                
-                <div class="bg-dark_paper border-b border-gray-700 shadow-md z-30 shrink-0">
-                    <div class="p-2 md:p-4 flex flex-col gap-2">
-                        
-                        <div class="flex items-center justify-between gap-4">
-                            
-                            <div class="flex items-center gap-4 flex-1 overflow-hidden">
-                                
-                                <div class="flex items-center gap-2 shrink-0">
-                                    <h2 class="text-lg md:text-2xl font-bold text-white truncate max-w-[150px] md:max-w-xs">{{ currentList.name }}</h2>
-                                    <button @click="toggleListFavorite(currentList)" class="shrink-0 focus:outline-none">
-                                        <i :class="['fas', currentList.isFavorite ? 'fa-star text-yellow-500' : 'fa-star text-gray-600 hover:text-yellow-500']"></i>
-                                    </button>
-                                    <div class="hidden md:flex gap-1 shrink-0">
-                                        <span v-for="tag in currentList.tags" class="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-gray-700 rounded text-gray-300">{{ tag }}</span>
-                                    </div>
-                                </div>
-
-                                <div class="hidden md:block relative group w-64 shrink-0">
-                                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-500"></i>
-                                    <input v-model="contentSearchQuery" type="text" placeholder="Zoeken..." class="w-full pl-9 pr-3 py-2 bg-dark border border-gray-600 rounded-lg text-sm text-gray-300 focus:border-primary focus:outline-none">
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-1 md:gap-2 shrink-0">
-                                <button v-if="hiddenColumns.length > 0" @click="resetColumns" class="md:hidden p-2 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20" title="Toon kolommen">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                
-                                <button @click="exportCSV" class="p-2 md:px-3 md:py-2 text-green-400 hover:bg-green-400/10 rounded-lg border border-green-500/20" title="Export CSV">
-                                    <i class="fas fa-file-export"></i>
-                                </button>
-                                
-                                <button @click="toggleEditMode" :class="['p-2 md:px-4 md:py-2 rounded-lg font-bold shadow transition flex items-center gap-1', isEditMode ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-200']">
-                                    <i :class="['fas', isEditMode ? 'fa-check' : 'fa-pen']"></i>
-                                    <span class="hidden md:inline">{{ isEditMode ? 'Klaar' : 'Bewerk' }}</span>
-                                </button>
-
-                                <button @click="addRow" class="p-2 md:px-4 md:py-2 bg-primary hover:opacity-90 text-white rounded-lg font-bold shadow flex items-center gap-1">
-                                    <i class="fas fa-plus"></i> <span class="hidden md:inline">Rij</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="md:hidden">
-                            <div class="relative w-full">
-                                <i class="fas fa-search absolute left-3 top-2.5 text-gray-500 text-xs"></i>
-                                <input v-model="contentSearchQuery" type="text" placeholder="Zoek in lijst..." class="w-full pl-8 pr-2 py-1.5 bg-dark border border-gray-600 rounded-lg text-sm text-gray-300 focus:border-primary focus:outline-none">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div v-if="isEditMode" class="px-2 py-2 bg-orange-500/10 border-t border-orange-500/20 flex items-center gap-2">
-                        <input v-model="newColumnEdit" placeholder="Nieuwe kolom..." class="flex-1 bg-dark border border-gray-600 px-2 py-1 rounded text-white text-sm focus:border-orange-500 focus:outline-none">
-                        <button @click="addColumnToExisting" class="text-orange-400 hover:text-white px-2"><i class="fas fa-plus-circle"></i></button>
-                        <button @click="deleteList" class="ml-auto text-red-400 hover:bg-red-400/10 px-2 py-1 rounded border border-red-500/20"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-
-                <div class="flex-1 flex flex-col min-h-0 bg-dark p-0 md:p-4">
-                    
-                    <div class="flex-1 md:border border-gray-700 md:rounded-xl bg-dark_paper flex flex-col overflow-hidden relative shadow-inner">
-                        
-                        <div class="flex-1 overflow-auto">
-                            <table class="table-auto-responsive divide-y divide-gray-700/0"> <thead>
-                                    <tr>
-                                        <th scope="col" class="bg-gray-900 w-8 md:w-10 px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                            <i class="fas fa-star"></i>
-                                        </th>
-                                        
-                                        <th v-for="(col, idx) in visibleColumns" :key="idx" 
-                                            class="bg-gray-900 px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider group">
-                                            
-                                            <div class="flex items-center justify-between gap-1">
-                                                <div v-if="isEditMode" class="flex-1 min-w-[80px]">
-                                                    <input :value="col" @change="event => renameColumn(col, event.target.value)" class="w-full bg-dark border border-gray-600 rounded px-1 py-1 text-white text-xs focus:border-orange-500 focus:outline-none">
-                                                </div>
-                                                <div v-else @click="sortList(col)" class="flex-1 cursor-pointer hover:text-white flex items-center gap-1 overflow-hidden">
-                                                    <span class="truncate font-semibold">{{ col }}</span>
-                                                    <span v-if="sortCol === col" class="text-primary text-[10px]"><i :class="['fas', sortAsc ? 'fa-sort-up' : 'fa-sort-down']"></i></span>
-                                                </div>
-                                                <button v-if="!isEditMode" @click.stop="hideColumn(col)" class="md:hidden text-gray-600 hover:text-white p-1 rounded hover:bg-gray-700 flex-shrink-0" title="Verberg">
-                                                    <i class="fas fa-eye-slash text-[10px]"></i>
-                                                </button>
-                                            </div>
-                                        </th>
-
-                                        <th v-if="isEditMode" class="bg-gray-900 w-8 md:w-10 px-2 py-3 text-right text-xs font-medium text-red-400 uppercase tracking-wider">
-                                            <i class="fas fa-trash"></i>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-800 bg-dark_paper/50">
-                                    <tr v-if="filteredRows.length === 0">
-                                        <td :colspan="visibleColumns.length + 2" class="px-4 py-8 text-center text-gray-500">
-                                            Geen resultaten gevonden voor '{{ contentSearchQuery }}'
-                                        </td>
-                                    </tr>
-                                    <tr v-for="(row, idx) in filteredRows" :key="idx" :class="['transition', row.isFavorite ? 'bg-yellow-500/5 hover:bg-yellow-500/10' : 'hover:bg-gray-800/50']">
-                                        <td class="px-2 py-3 whitespace-nowrap text-sm cursor-pointer align-top md:align-middle">
-                                            <button @click="toggleRecordFavorite(row)" class="focus:outline-none pt-1 md:pt-0">
-                                                <i :class="[row.isFavorite ? 'fas fa-star text-yellow-500' : 'far fa-star text-gray-500 hover:text-yellow-500']"></i>
-                                            </button>
-                                        </td>
-                                        <td v-for="col in visibleColumns" :key="col + idx" class="px-2 py-3 text-sm text-gray-300 align-top md:align-middle">
-                                            <div v-if="!isEditMode" class="truncate-cell" :title="row[col]">
-                                                {{ row[col] }}
-                                            </div>
-                                            <input v-else v-model="row[col]" @change="saveCurrentList" class="w-full min-w-[80px] bg-dark/50 border border-transparent hover:border-gray-600 focus:border-orange-500 focus:ring-0 rounded px-1 py-1 text-white transition-colors">
-                                        </td>
-                                        <td v-if="isEditMode" class="px-2 py-3 whitespace-nowrap text-right text-sm font-medium align-top md:align-middle">
-                                            <button @click="deleteRow(row)" class="text-gray-600 hover:text-red-500 transition-colors p-1"><i class="fas fa-trash-alt"></i></button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <div class="mt-4 text-xs text-gray-500 text-center flex justify-between px-4 pb-20">
-                                <span>{{ filteredRows.length }} records</span>
-                                <span v-if="hiddenColumns.length > 0" class="text-blue-400">{{ hiddenColumns.length }} kolommen verborgen</span>
-                            </div>
-                        </div>
-                    </div>
+        <div v-if="isCreating" class="absolute inset-0 z-[100] bg-dark-bg/95 flex items-center justify-center p-4">
+            <div class="bg-card-bg p-6 rounded-xl border border-border-color w-full max-w-md shadow-2xl">
+                <h3 class="text-white font-bold mb-4 text-lg">Nieuwe Lijst</h3>
+                <input v-model="newList.name" placeholder="Naam van de lijst..." class="w-full bg-dark-bg border border-border-color rounded-lg p-3 text-sm text-white mb-4 outline-none focus:border-primary-purple">
+                <div class="flex justify-end gap-3">
+                    <button @click="isCreating = false" class="text-gray-400 text-sm">Annuleren</button>
+                    <button @click="saveNewList" class="bg-primary-purple text-white px-6 py-2 rounded-lg font-bold text-sm shadow-lg">Lijst Opslaan</button>
                 </div>
             </div>
         </div>
@@ -312,198 +177,182 @@
 </div>
 
 <script>
-const { createApp, ref, computed, onMounted } = Vue;
+const { createApp, ref, computed, onMounted, watch } = Vue;
 
-const API_CONFIG = {
-    BASE_URL: 'http://10.10.2.20:8080',
-    ENDPOINTS: {
-        LOGIN: '/api/auth/login',
-        LISTS: '/api/lists'
-    },
-    TOKEN_KEY: 'LISTVAULT_JWT_TOKEN'
-};
+const API_URL = 'http://10.10.2.20:5000';
+const CLIENT_ID = 'sandman';
+const APP_NAME = 'listvault';
 
 createApp({
     setup() {
-        const isAuthenticated = ref(false);
-        const isLoading = ref(false);
-        const loginForm = ref({ username: '', password: '' });
-        const loginError = ref('');
-        const authToken = ref(localStorage.getItem(API_CONFIG.TOKEN_KEY));
+        const manager = new OfflineManager(API_URL, CLIENT_ID, APP_NAME);
         
         const lists = ref([]);
         const currentList = ref(null);
+        const syncPending = ref(0);
         const showMobileMenu = ref(false);
         const sidebarSearch = ref('');
-        
+        const contentSearchQuery = ref('');
         const isCreating = ref(false);
         const isEditMode = ref(false);
-        const contentSearchQuery = ref('');
-        const sortCol = ref(null);
-        const sortAsc = ref(true);
-        const hiddenColumns = ref([]);
-        
-        const newList = ref({ name: '', tagsInput: '', columns: [] });
-        const newColumnName = ref('');
-        const newColumnEdit = ref('');
-        const fileInput = ref(null);
+        const newList = ref({ name: '' });
 
-        function normalizeListData(doc) {
-            if (!doc) return null;
-            let coreData = doc;
-            if (doc.data && typeof doc.data === 'object') coreData = doc.data;
-            const id = doc.id || doc._id || coreData.id || coreData._id;
-            return {
-                ...coreData, id: id,
-                columns: coreData.columns || [], rows: coreData.rows || [],
-                tags: coreData.tags || [], isFavorite: !!coreData.isFavorite
-            };
-        }
-
-        async function fetchWithAuth(url, options = {}) {
-            if (!authToken.value) return null;
-            const headers = { 'Authorization': `Bearer ${authToken.value}`, 'Content-Type': 'application/json', ...options.headers };
-            try {
-                const response = await fetch(url, { ...options, headers });
-                if (response.status === 401) { handleLogout(); return null; }
-                return response;
-            } catch (err) { return null; }
-        }
-
-        const handleLogin = async () => {
-            isLoading.value = true; loginError.value = '';
-            try {
-                const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.LOGIN}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(loginForm.value)
-                });
-                if (response.ok) {
-                    const data = await response.json(); authToken.value = data.token; localStorage.setItem(API_CONFIG.TOKEN_KEY, data.token);
-                    isAuthenticated.value = true; await fetchLists();
-                } else { loginError.value = 'Inloggen mislukt.'; }
-            } catch (e) { loginError.value = 'Gateway error.'; } finally { isLoading.value = false; }
-        };
-
-        const handleLogout = () => { authToken.value = null; isAuthenticated.value = false; localStorage.removeItem(API_CONFIG.TOKEN_KEY); currentList.value = null; };
-
-        const fetchLists = async () => {
-            const response = await fetchWithAuth(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.LISTS}`);
-            if (response && response.ok) {
-                const rawData = await response.json();
-                let arrayData = rawData.data || (Array.isArray(rawData) ? rawData : []);
-                lists.value = arrayData.map(normalizeListData).filter(l => l && l.id);
+        // --- Data Fetching ---
+        const refreshLocalData = async () => {
+            const data = await manager.getSmartCollection('data_lists');
+            lists.value = data.sort((a,b) => a.name.localeCompare(b.name));
+            if (currentList.value) {
+                const updated = data.find(l => (l.id||l._id) === (currentList.value.id||currentList.value._id));
+                if (updated) {
+                    // Behoud columnSettings als die er nog niet zijn
+                    if (!updated.columnSettings) updated.columnSettings = {};
+                    currentList.value = updated;
+                }
             }
         };
 
-        const saveCurrentList = async () => {
-            if (!currentList.value) return;
-            const url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.LISTS}/${currentList.value.id}`;
-            await fetchWithAuth(url, { method: 'PUT', body: JSON.stringify(currentList.value) });
+        // --- Helpers ---
+        const getColumnWidth = (col) => {
+            if (!currentList.value.columnSettings || !currentList.value.columnSettings[col]) return 100;
+            return currentList.value.columnSettings[col].width || 100;
         };
+
+        const visibleColumns = computed(() => {
+            if (!currentList.value) return [];
+            return currentList.value.columns.filter(col => {
+                const settings = currentList.value.columnSettings[col];
+                return settings ? !settings.hidden : true;
+            });
+        });
+
+        const hasHiddenColumns = computed(() => {
+            if (!currentList.value) return false;
+            return currentList.value.columns.length !== visibleColumns.value.length;
+        });
 
         const sidebarFilteredLists = computed(() => {
-            let res = lists.value;
-            if (sidebarSearch.value) {
-                const lower = sidebarSearch.value.toLowerCase();
-                res = res.filter(l => l.name.toLowerCase().includes(lower) || (l.tags && l.tags.some(t => t.toLowerCase().includes(lower))));
-            }
-            return res.sort((a, b) => a.name.localeCompare(b.name));
+            if (!sidebarSearch.value) return lists.value;
+            return lists.value.filter(l => l.name.toLowerCase().includes(sidebarSearch.value.toLowerCase()));
         });
-        
-        const favoriteLists = computed(() => lists.value.filter(l => l.isFavorite));
-        const visibleColumns = computed(() => !currentList.value ? [] : currentList.value.columns.filter(col => !hiddenColumns.value.includes(col)));
 
         const filteredRows = computed(() => {
             if (!currentList.value) return [];
             let rows = [...currentList.value.rows];
             if (contentSearchQuery.value) {
                 const q = contentSearchQuery.value.toLowerCase();
-                rows = rows.filter(row => Object.values(row).some(val => String(val).toLowerCase().includes(q)));
+                rows = rows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
             }
-            const favs = rows.filter(r => r.isFavorite); const norms = rows.filter(r => !r.isFavorite);
-            const sortFn = (a, b) => {
-                if (!sortCol.value) return 0;
-                const valA = a[sortCol.value] || ''; const valB = b[sortCol.value] || '';
-                const isNum = !isNaN(parseFloat(valA)) && isFinite(valA) && !isNaN(parseFloat(valB)) && isFinite(valB);
-                if (isNum) return sortAsc.value ? valA - valB : valB - valA;
-                const comp = String(valA).localeCompare(String(valB)); return sortAsc.value ? comp : -comp;
-            };
-            favs.sort(sortFn); norms.sort(sortFn);
-            return [...favs, ...norms];
+            return rows.sort((a,b) => (b.isFavorite === true) - (a.isFavorite === true));
         });
 
-        const selectList = (list) => { currentList.value = list; isCreating.value = false; isEditMode.value = false; contentSearchQuery.value = ''; showMobileMenu.value = false; hiddenColumns.value = []; };
-        const toggleEditMode = () => isEditMode.value = !isEditMode.value;
-        const hideColumn = (col) => hiddenColumns.value.push(col);
-        const resetColumns = () => hiddenColumns.value = [];
-        
-        const renameColumn = (oldName, newName) => {
-            if (!newName || !currentList.value || oldName === newName) return;
-            const idx = currentList.value.columns.indexOf(oldName);
-            if (idx === -1) return;
-            currentList.value.rows.forEach(row => { row[newName] = row[oldName]; delete row[oldName]; });
-            currentList.value.columns[idx] = newName;
+        // --- Actions ---
+        const selectList = (list) => {
+            // Zorg voor default settings
+            if (!list.columnSettings) list.columnSettings = {};
+            list.columns.forEach(col => {
+                if (!list.columnSettings[col]) list.columnSettings[col] = { width: 100, hidden: false };
+            });
+            currentList.value = list;
+            showMobileMenu.value = false;
+            isEditMode.value = false;
+            contentSearchQuery.value = '';
+        };
+
+        const hideColumn = (col) => {
+            currentList.value.columnSettings[col].hidden = true;
             saveCurrentList();
         };
 
-        const addColumnToExisting = () => {
-            if (newColumnEdit.value && !currentList.value.columns.includes(newColumnEdit.value)) {
-                currentList.value.columns.push(newColumnEdit.value); newColumnEdit.value = ''; saveCurrentList();
+        const showAllColumns = () => {
+            currentList.value.columns.forEach(col => {
+                currentList.value.columnSettings[col].hidden = false;
+            });
+            saveCurrentList();
+        };
+
+        const toggleListFavorite = (list) => {
+            list.isFavorite = !list.isFavorite;
+            manager.saveSmartDocument('data_lists', list);
+        };
+
+        const saveCurrentList = async () => {
+            if (currentList.value) await manager.saveSmartDocument('data_lists', currentList.value);
+        };
+
+        const addRow = () => {
+            const row = { isFavorite: false };
+            currentList.value.columns.forEach(c => row[c] = '');
+            currentList.value.rows.unshift(row);
+            saveCurrentList();
+        };
+
+        const deleteRow = (idx) => {
+            const row = filteredRows.value[idx];
+            const realIdx = currentList.value.rows.indexOf(row);
+            currentList.value.rows.splice(realIdx, 1);
+            saveCurrentList();
+        };
+
+        const saveNewList = async () => {
+            const cols = ['Naam', 'Omschrijving', 'Status'];
+            const settings = {};
+            cols.forEach(c => settings[c] = { width: 100, hidden: false });
+            
+            const doc = { 
+                name: newList.value.name, 
+                columns: cols, 
+                columnSettings: settings,
+                rows: [], 
+                isFavorite: false 
+            };
+            await manager.saveSmartDocument('data_lists', doc);
+            await refreshLocalData();
+            isCreating.value = false;
+        };
+
+        const deleteList = async () => {
+            if (confirm('Verwijderen?')) {
+                await manager.deleteSmartDocument('data_lists', currentList.value.id || currentList.value._id);
+                currentList.value = null;
+                await refreshLocalData();
             }
         };
 
-        const toggleListFavorite = async (list) => {
-            list.isFavorite = !list.isFavorite;
-            await fetchWithAuth(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.LISTS}/${list.id}`, { method: 'PUT', body: JSON.stringify(list) });
-        };
-        const toggleRecordFavorite = (row) => { row.isFavorite = !row.isFavorite; saveCurrentList(); };
-        const addRow = () => { const newRow = { isFavorite: false }; currentList.value.columns.forEach(c => newRow[c] = ''); currentList.value.rows.unshift(newRow); saveCurrentList(); };
-        const deleteRow = (row) => { if(confirm('Rij verwijderen?')) { const idx = currentList.value.rows.indexOf(row); if (idx > -1) { currentList.value.rows.splice(idx, 1); saveCurrentList(); } } };
-        const deleteList = async () => { if(confirm('Lijst verwijderen?')) { await fetchWithAuth(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.LISTS}/${currentList.value.id}`, { method: 'DELETE' }); currentList.value = null; await fetchLists(); } };
-        const sortList = (col) => { if (isEditMode.value) return; if (sortCol.value === col) sortAsc.value = !sortAsc.value; else { sortCol.value = col; sortAsc.value = true; } };
-
-        const startCreateList = () => { newList.value = { name: 'Nieuwe Lijst', tagsInput: '', columns: ['Naam'] }; isCreating.value = true; currentList.value = null; };
-        const addColumn = () => { if (newColumnName.value) { newList.value.columns.push(newColumnName.value); newColumnName.value = ''; } };
-        const removeColumn = (idx) => newList.value.columns.splice(idx, 1);
-        const cancelCreate = () => isCreating.value = false;
-        const saveNewList = async () => {
-            const tags = newList.value.tagsInput.split(',').map(t => t.trim()).filter(t => t);
-            const payload = { name: newList.value.name, columns: newList.value.columns, tags: tags, rows: [], isFavorite: false };
-            const response = await fetchWithAuth(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.LISTS}`, { method: 'POST', body: JSON.stringify(payload) });
-            if (response && response.ok) { await fetchLists(); const data = await response.json(); const created = normalizeListData(data); if(created) selectList(created); }
-        };
-
-        const exportCSV = () => {
-            if (!currentList.value) return;
-            const headers = currentList.value.columns.join(',');
-            const rows = currentList.value.rows.map(r => currentList.value.columns.map(c => `"${(r[c] || '').replace(/"/g, '""')}"`).join(',')).join('\n');
-            saveAs(new Blob([`${headers}\n${rows}`], { type: 'text/csv;charset=utf-8;' }), `${currentList.value.name}.csv`);
-        };
         const handleImportCSV = (event) => {
-            const file = event.target.files[0]; if (!file) return;
+            const file = event.target.files[0];
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = async (e) => {
-                const lines = e.target.result.split('\n').filter(l => l.trim()); if (lines.length < 1) return;
+                const lines = e.target.result.split('\n').filter(l => l.trim());
                 const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                const settings = {};
+                headers.forEach(h => settings[h] = { width: 100, hidden: false });
+                
                 const rows = lines.slice(1).map(line => {
-                    const rowObj = { isFavorite: false }; const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-                    headers.forEach((h, i) => rowObj[h] = vals[i] || ''); return rowObj;
+                    const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                    const obj = { isFavorite: false };
+                    headers.forEach((h, i) => obj[h] = vals[i] || '');
+                    return obj;
                 });
-                const imported = { name: file.name.replace('.csv', ''), tags: ['import'], columns: headers, rows: rows, isFavorite: false };
-                const res = await fetchWithAuth(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.LISTS}`, { method: 'POST', body: JSON.stringify(imported) });
-                if (res && res.ok) { await fetchLists(); alert('Geïmporteerd!'); }
-            }; reader.readAsText(file); event.target.value = '';
+                await manager.saveSmartDocument('data_lists', { name: file.name.replace('.csv', ''), columns: headers, columnSettings: settings, rows: rows, isFavorite: false });
+                refreshLocalData();
+            };
+            reader.readAsText(file);
         };
 
-        onMounted(async () => { if (authToken.value) { isAuthenticated.value = true; await fetchLists(); } });
+        onMounted(async () => {
+            manager.onSyncChange = (c) => syncPending.value = c;
+            manager.onDataChanged = () => refreshLocalData();
+            await refreshLocalData();
+            manager.refreshCache('data_lists');
+        });
 
         return {
-            isAuthenticated, isLoading, loginForm, loginError, handleLogin, handleLogout,
-            showMobileMenu, sidebarSearch, sidebarFilteredLists, favoriteLists, currentList, selectList,
-            toggleListFavorite, deleteList, exportCSV, handleImportCSV, fileInput,
-            isCreating, startCreateList, newList, newColumnName, addColumn, removeColumn, saveNewList, cancelCreate,
-            isEditMode, toggleEditMode, contentSearchQuery, filteredRows, sortList, sortCol, sortAsc,
-            addRow, deleteRow, saveCurrentList, toggleRecordFavorite, newColumnEdit, addColumnToExisting, renameColumn,
-            hiddenColumns, hideColumn, resetColumns, visibleColumns
+            lists, currentList, sidebarFilteredLists, filteredRows, visibleColumns, hasHiddenColumns,
+            showMobileMenu, sidebarSearch, contentSearchQuery, syncPending, isCreating, isEditMode, newList,
+            selectList, addRow, deleteRow, saveCurrentList, toggleListFavorite, toggleRecordFavorite: (r) => { r.isFavorite = !r.isFavorite; saveCurrentList(); },
+            hideColumn, showAllColumns, getColumnWidth, startCreateList: () => { isCreating.value = true; newList.value.name = ''; },
+            saveNewList, deleteList, handleImportCSV
         };
     }
 }).mount('#app');
