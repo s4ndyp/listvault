@@ -105,7 +105,7 @@
 
                         <div class="flex items-center gap-3 ml-4 border-l border-white/10 pl-4">
                             <input v-if="isEditMode" v-model="currentList.name" @change="saveCurrentList" class="bare-input bg-transparent border-b border-primary/50 text-lg font-bold text-white outline-none w-32 md:w-48">
-                            <h2 v-else class="text-lg font-bold text-white truncate max-w-[120px] md:max-w-none">{{ currentList.name }}</h2>
+                            <h2 v-else class="text-lg font-bold text-white truncate max-w-[200px] md:max-w-none">{{ currentList.name }}</h2>
                             
                             <div v-if="isEditMode" class="flex items-center gap-2 ml-2">
                                 <i class="fas fa-tags text-xxs text-primary"></i>
@@ -168,7 +168,7 @@
 
                <div class="rows-container">
                     <div v-for="(row, idx) in filteredRows" :key="idx" 
-                         :class="['flex items-center px-6 transition-colors group', isUltraCompact ? 'py-0.5' : 'py-2', row.isFavorite ? 'favorite-row' : '']">
+     :class="['flex items-center px-1 md:px-5 transition-colors group', isUltraCompact ? 'py-0.5' : 'py-2', row.isFavorite ? 'favorite-row' : '']">
                         <div class="w-10 shrink-0 text-center flex items-center justify-center">
                             <input v-if="isEditMode" type="checkbox" :value="row" v-model="selectedRows" class="cursor-pointer accent-primary">
                             <button v-else @click="toggleRecordFavorite(row)" class="text-xs">
@@ -179,17 +179,16 @@
                             <input v-if="isEditMode" v-model="row[col]" @change="saveCurrentList" class="bare-input text-sm py-1 bg-transparent border-b border-transparent focus:border-primary/50 w-full text-white">
                             <div v-else @click="copyText(row[col])" :class="['py-1 truncate text-gray-300 cursor-copy cell-text', isLargeFont ? 'font-large-mode' : 'font-normal-mode']" v-html="highlight(row[col])"></div>
                         </div>
-                       <div class="w-16 shrink-0 text-right flex items-center justify-end gap-2">
+                       <div v-if="isEditMode" class="w-16 shrink-0 text-right flex items-center justify-end gap-2 transition-all">
     <button @click="duplicateRow(row)" 
             title="Rij dupliceren"
-            class="text-gray-600 hover:text-primary transition-all">
+            class="text-gray-500 hover:text-primary transition-colors">
         <i class="fas fa-copy text-xs"></i>
     </button>
 
-    <button v-if="isEditMode" 
-            @click="deleteRow(idx)" 
+    <button @click="deleteRow(idx)" 
             title="Rij verwijderen"
-            class="text-gray-700 hover:text-red-500 transition-all">
+            class="text-gray-600 hover:text-red-500 transition-colors">
         <i class="fas fa-trash-alt text-xs"></i>
     </button>
 </div>

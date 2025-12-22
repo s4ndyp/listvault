@@ -99,15 +99,27 @@
     background-color: var(--header-bg) !important;
     position: sticky;
     top: 0;
-    z-index: 50; /* Iets hoger gezet voor de zekerheid */
+    z-index: 50;
     opacity: 1 !important;
     border-bottom: 2px solid var(--accent-color);
-    
-    /* Voeg deze toe om Tailwind in de HTML te kunnen negeren */
     display: flex;
     align-items: center;
-    padding: 12px 24px; /* Dit vervangt px-6 py-3 */
     min-height: 48px;
+
+    /* STANDAARD (Mobiel): Gebruik 4px of 8px */
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    padding-left: 4px !important;  /* Dit komt overeen met px-2 */
+    padding-right: 8px !important;
+}
+
+/* DESKTOP: Vanaf 768px breedte */
+@media (min-width: 768px) {
+    .column-header {
+        /* Overschrijf de mobiele padding met de desktop waarde */
+        padding-left: 24px !important; /* Dit komt overeen met px-6 */
+        padding-right: 24px !important;
+    }
 }
 
 
