@@ -1,4 +1,4 @@
-const CACHE_NAME = 'listvault-v2';
+const CACHE_NAME = 'listvault-v3';
 const ASSETS = [
   'index.html',
   'app_styles.css',
