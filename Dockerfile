@@ -1,8 +1,12 @@
-# Een super lichtgewicht webserver
 FROM nginx:alpine
 
-# Kopieer de html file naar de standaard nginx map
-COPY *.* /usr/share/nginx/html/
+# Verwijder de standaard nginx bestanden
+RUN rm -rf /usr/share/nginx/html/*
 
-# Nginx draait standaard op poort 80
+# Kopieer ALLE bestanden uit de huidige map naar de container
+COPY . /usr/share/nginx/html/
+
+# Kopieer onze eigen nginx configuratie
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 EXPOSE 80
