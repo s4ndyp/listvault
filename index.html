@@ -64,17 +64,14 @@
             </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto px-2 space-y-4 py-2 custom-scrollbar">
-            <div v-for="(group, tagName) in groupedLists" :key="tagName" class="space-y-1">
-                <div class="px-3 text-[10px] font-bold text-gray-500 uppercase">{{ tagName }}</div>
-                <div v-for="list in group" :key="list.id || list._id" @click="selectList(list)" 
-                     :class="['flex items-center px-3 py-2 text-sm rounded-md cursor-pointer transition-all', 
-                              currentList && (currentList.id === list.id || currentList._id === list._id) ? 'active-list-item text-white' : 'hover:bg-white/5']">
-                    <i :class="['fas fa-table mr-3 text-xs', list.isFavorite ? 'text-yellow-500' : 'text-gray-500']"></i>
-                    <span class="truncate flex-1">{{ list.name }}</span>
-                </div>
-            </div>
-        </div>
+ <div class="flex-1 overflow-y-auto px-2 py-2 space-y-1 custom-scrollbar">
+    <div v-for="list in sidebarFilteredLists" :key="list.id || list._id" @click="selectList(list)" 
+         :class="['flex items-center px-3 py-2 text-sm rounded-md cursor-pointer transition-all', 
+                  currentList && (currentList.id === list.id || currentList._id === list._id) ? 'active-list-item text-white' : 'hover:bg-white/5']">
+        <i :class="['fas fa-table mr-3 text-xs', list.isFavorite ? 'text-yellow-500' : 'text-gray-500']"></i>
+        <span class="truncate flex-1">{{ list.name }}</span>
+    </div>
+</div>
 
         <div class="p-4 border-t border-border bg-black/10 grid grid-cols-2 gap-2 mb-16 md:mb-0">
             <button @click="startCreateList" class="py-2 bg-primary text-white rounded-lg text-xs font-bold">Nieuw</button>
@@ -333,14 +330,21 @@ createApp({
 
         const getColumnWidth = (col) => currentList.value?.columnSettings?.[col]?.width || 100;
 
-        onMounted(async () => {
-            manager.onSyncChange = (c) => syncPending.value = c;
-            manager.onDataChanged = () => refreshLocalData();
-            await refreshLocalData();
-            manager.refreshCache('data_lists');
-            const savedTheme = localStorage.getItem('lv_theme');
-            if (savedTheme) setTheme(savedTheme);
-        });
+onMounted(async () => {
+    manager.onSyncChange = (c) => syncPending.value = c;
+    manager.onDataChanged = () => refreshLocalData();
+    await refreshLocalData();
+    manager.refreshCache('data_lists');
+    
+    const savedTheme = localStorage.getItem('lv_theme');
+    if (savedTheme) setTheme(savedTheme);
+
+    // NIEUW: Als er bij het opstarten op mobiel geen lijst geselecteerd is,
+    // klap dan direct de zijbalk open.
+    if (!currentList.value && window.innerWidth < 768) {
+        showMobileMenu.value = true;
+    }
+});
 
         return {
             lists, currentList, sidebarFilteredLists, groupedLists, filteredRows, visibleColumns, allUniqueTags, activeTagFilter,
