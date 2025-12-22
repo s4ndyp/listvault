@@ -53,6 +53,9 @@
   <symbol id="icon-plus" viewBox="0 0 448 512">
     <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/>
   </symbol>
+  <symbol id="icon-list" viewBox="0 0 512 512">
+    <path d="M64 144a48 48 0 1 0 0-96 48 48 0 1 0 0 96zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zM64 464a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm0-160a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"/>
+  </symbol>
 </svg>
 <div id="app" v-cloak class="flex h-screen overflow-hidden relative">
 
@@ -206,7 +209,7 @@
     <button @click="deleteRow(idx)" 
             title="Rij verwijderen"
             class="text-gray-600 hover:text-red-500 transition-colors">
-        <i class="fas fa-trash-alt text-xs"></i>
+        <svg class="w-3 h-3 fill-current"><use href="#icon-trash"></use></svg>
     </button>
 </div>
                     </div>
@@ -216,7 +219,7 @@
 
         <div class="md:hidden fixed bottom-0 left-0 right-0 h-16 sidebar-bg border-t border-border flex items-center justify-around z-[70] mobile-nav-shadow">
             <button @click="showMobileMenu = !showMobileMenu" :class="['flex flex-col items-center gap-1', showMobileMenu ? 'text-primary' : 'text-gray-500']">
-                <i class="fas fa-list-ul text-lg"></i><span class="text-[9px] font-bold uppercase">Lijsten</span>
+                <svg class="w-5 h-5 fill-current"><use href="#icon-list"></use></svg></i><span class="text-[9px] font-bold uppercase">Lijsten</span>
             </button>
             <button @click="toggleFontSize" :class="['flex flex-col items-center gap-1', isLargeFont ? 'text-primary' : 'text-gray-500']">
                 <span class="text-lg font-bold leading-none">A</span><span class="text-[9px] font-bold uppercase">Grootte</span>
@@ -230,7 +233,7 @@
         </div>
 
         <button v-if="isEditMode && currentList" @click="addRow" class="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center z-[71]">
-            <i class="fas fa-plus text-xl"></i>
+            <svg class="w-6 h-6 fill-current"><use href="#icon-plus"></use></svg>
         </button>
     </div>
 
