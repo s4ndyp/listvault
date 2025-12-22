@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ListVault Pro - Dynamic Grid</title>
+    <title>ListVault Pro - Themeable Edition</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,6 +12,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.4/dexie.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="offline_managerv2.js"></script>
+    
+    <link rel="stylesheet" href="app_styles.css">
 
     <script>
         tailwind.config = {
@@ -19,220 +21,297 @@
             theme: {
                 extend: {
                     colors: {
-                        'dark-bg': '#0F111A',
-                        'card-bg': '#1E2130',
-                        'primary-purple': '#8B5CF6',
-                        'border-color': 'rgba(255, 255, 255, 0.08)'
+                        'primary-purple': 'var(--primary-color)',
+                        'dark-bg': 'var(--main-bg)',
+                        'card-bg': 'var(--sidebar-bg)',
+                        'border-color': 'var(--border-color)'
                     },
                     fontSize: { 'xxs': '0.65rem' }
                 }
             }
         }
     </script>
-
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        [v-cloak] { display: none; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 10px; }
-        .glass-header { background: rgba(15, 17, 26, 0.85); backdrop-filter: blur(12px); }
-        .column-header { background-color: #1E2130; border-bottom: 2px solid rgba(139, 92, 246, 0.2); }
-    </style>
 </head>
-<body class="h-full bg-dark-bg text-gray-300 overflow-hidden">
+<body class="h-full theme-default text-gray-300 overflow-hidden" :class="currentThemeClass">
 
-<div id="app" v-cloak class="flex h-screen overflow-hidden">
+<div id="app" v-cloak class="flex h-screen overflow-hidden relative">
 
-    <div :class="['fixed md:relative z-[60] h-full w-72 bg-card-bg border-r border-border-color transition-transform duration-300 flex flex-col', showMobileMenu ? 'translate-x-0' : '-translate-x-full md:translate-x-0']">
-        <div class="p-4 flex justify-between items-center h-16 shrink-0 border-b border-border-color">
-            <div class="font-bold text-white flex items-center gap-2">
-                <i class="fas fa-vault text-primary-purple"></i> ListVault
+    <div :class="['fixed md:relative z-[60] h-full w-72 sidebar-bg border-r border-border transition-transform duration-300 flex flex-col', showMobileMenu ? 'translate-x-0' : '-translate-x-full md:translate-x-0']">
+        <div class="p-4 flex justify-between items-center h-16 shrink-0 border-b border-border">
+            <div class="font-bold text-white flex items-center gap-2 text-glow">
+                <i class="fas fa-vault text-primary"></i> ListVault
             </div>
-            <button @click="showMobileMenu = false" class="md:hidden text-gray-400"><i class="fas fa-times"></i></button>
+            <button @click="showMobileMenu = false" class="md:hidden text-gray-400 p-2"><i class="fas fa-times"></i></button>
         </div>
         
-        <div class="p-3">
-            <input v-model="sidebarSearch" placeholder="Lijst zoeken..." class="w-full bg-dark-bg/50 border border-border-color rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary-purple transition-all">
-        </div>
-
-        <div class="flex-1 overflow-y-auto px-2 space-y-1">
-            <div v-for="list in sidebarFilteredLists" :key="list.id" @click="selectList(list)" 
-                 :class="['flex items-center px-3 py-2 text-sm rounded-md cursor-pointer transition-all', 
-                          currentList && currentList.id === list.id ? 'bg-primary-purple/20 text-white' : 'hover:bg-white/5']">
-                <i :class="['fas fa-table mr-3 text-xs', list.isFavorite ? 'text-yellow-500' : 'text-gray-500']"></i>
-                <span class="truncate">{{ list.name }}</span>
+        <div class="px-4 py-2 border-b border-border">
+            <div class="text-[10px] font-bold text-gray-500 uppercase mb-2">Thema</div>
+            <div class="flex gap-2">
+                <button v-for="t in themes" :key="t.id" @click="setTheme(t.id)" 
+                        :title="t.name" :class="['w-5 h-5 rounded-full border border-white/20 transition-transform hover:scale-110', currentThemeClass === t.class ? 'ring-2 ring-white scale-110' : '']"
+                        :style="{ backgroundColor: t.preview }"></button>
             </div>
         </div>
 
-        <div class="p-4 border-t border-border-color bg-card-bg/50 grid grid-cols-2 gap-2">
-            <button @click="startCreateList" class="py-2 bg-primary-purple text-white rounded-lg text-xs font-bold">Nieuw</button>
-            <label class="py-2 bg-dark-bg border border-border-color text-center rounded-lg text-xs font-bold cursor-pointer">
+        <div class="p-3">
+            <input v-model="sidebarSearch" placeholder="Lijst zoeken..." class="bare-input w-full bg-black/20 border border-border rounded-lg px-3 py-2 text-xs focus:border-primary transition-all text-white">
+        </div>
+
+        <div class="px-4 pb-2">
+            <div class="flex flex-wrap gap-1">
+                <button @click="activeTagFilter = ''" :class="['px-2 py-0.5 rounded text-xxs border border-border', !activeTagFilter ? 'bg-primary text-white' : 'text-gray-500']">Alles</button>
+                <button v-for="tag in allUniqueTags" :key="tag" @click="activeTagFilter = tag" :class="['px-2 py-0.5 rounded text-xxs border border-border', activeTagFilter === tag ? 'bg-primary text-white' : 'text-gray-500']">{{ tag }}</button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-2 space-y-4 py-2 custom-scrollbar">
+            <div v-for="(group, tagName) in groupedLists" :key="tagName" class="space-y-1">
+                <div class="px-3 text-[10px] font-bold text-gray-500 uppercase">{{ tagName }}</div>
+                <div v-for="list in group" :key="list.id || list._id" @click="selectList(list)" 
+                     :class="['flex items-center px-3 py-2 text-sm rounded-md cursor-pointer transition-all', 
+                              currentList && (currentList.id === list.id || currentList._id === list._id) ? 'active-list-item text-white' : 'hover:bg-white/5']">
+                    <i :class="['fas fa-table mr-3 text-xs', list.isFavorite ? 'text-yellow-500' : 'text-gray-500']"></i>
+                    <span class="truncate flex-1">{{ list.name }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-border bg-black/10 grid grid-cols-2 gap-2 mb-16 md:mb-0">
+            <button @click="startCreateList" class="py-2 bg-primary text-white rounded-lg text-xs font-bold">Nieuw</button>
+            <label class="py-2 bg-white/5 border border-border text-center rounded-lg text-xs font-bold cursor-pointer">
                 Import <input type="file" @change="handleImportCSV" class="hidden" accept=".csv">
             </label>
         </div>
     </div>
 
-    <div class="flex-1 flex flex-col bg-dark-bg overflow-hidden relative">
-        
-        <button @click="showMobileMenu = true" class="md:hidden fixed bottom-6 right-6 z-50 w-12 h-12 bg-primary-purple text-white rounded-full shadow-lg flex items-center justify-center">
-            <i class="fas fa-bars"></i>
-        </button>
-
+    <div class="flex-1 flex flex-col main-bg overflow-hidden relative w-full">
         <div v-if="currentList" class="flex flex-col h-full overflow-hidden">
-            
-            <div class="glass-header shrink-0 border-b border-border-color">
+            <div class="shrink-0 border-b border-border header-bg">
                 <div class="px-6 h-14 flex items-center justify-between">
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <h2 class="text-lg font-bold text-white truncate">{{ currentList.name }}</h2>
-                        <button @click="toggleListFavorite(currentList)" class="text-xs">
-                            <i :class="['fas fa-star', currentList.isFavorite ? 'text-yellow-500' : 'text-gray-600']"></i>
-                        </button>
-                    </div>
                     <div class="flex items-center gap-2">
-                        <button v-if="hasHiddenColumns" @click="showAllColumns" class="text-xxs bg-primary-purple/20 text-primary-purple px-2 py-1 rounded hover:bg-primary-purple/30 transition-all">
-                            <i class="fas fa-eye mr-1"></i> Toon alle kolommen
+                        <button @click="isEditMode = !isEditMode" :class="['h-9 px-4 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 border border-border', isEditMode ? 'bg-orange-500/20 text-orange-400 border-orange-500/50' : 'bg-black/20 hover:border-gray-500']">
+                            <i :class="['fas', isEditMode ? 'fa-check' : 'fa-pen']"></i>
+                            <span class="hidden md:inline">{{ isEditMode ? 'Klaar' : 'Bewerk' }}</span>
                         </button>
-                        <button @click="isEditMode = !isEditMode" :class="['px-3 py-1.5 rounded-md text-xs font-semibold border transition-all', isEditMode ? 'bg-orange-500/20 border-orange-500/50 text-orange-400' : 'bg-dark-bg border-border-color hover:border-gray-500']">
-                            <i class="fas fa-pen-nib mr-1"></i> {{ isEditMode ? 'Klaar' : 'Bewerk' }}
+
+                        <div class="hidden md:flex bg-black/20 rounded-lg border border-border p-0.5">
+                            <button @click="toggleFontSize" class="h-8 w-8 text-gray-400 hover:text-white flex items-center justify-center">
+                                <span class="font-bold" :class="isLargeFont ? 'text-lg' : 'text-xs'">A</span>
+                            </button>
+                            <button @click="isUltraCompact = !isUltraCompact" class="h-8 w-8 text-gray-400 hover:text-white flex items-center justify-center">
+                                <i :class="['fas text-xs', isUltraCompact ? 'fa-compress-alt' : 'fa-expand-alt']"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex items-center gap-3 ml-4 border-l border-white/10 pl-4">
+                            <input v-if="isEditMode" v-model="currentList.name" @change="saveCurrentList" class="bare-input bg-transparent border-b border-primary/50 text-lg font-bold text-white outline-none w-32 md:w-48">
+                            <h2 v-else class="text-lg font-bold text-white truncate max-w-[120px] md:max-w-none">{{ currentList.name }}</h2>
+                            
+                            <div v-if="isEditMode" class="flex items-center gap-2 ml-2">
+                                <i class="fas fa-tags text-xxs text-primary"></i>
+                                <input :value="currentList.tags ? currentList.tags.join(', ') : ''" 
+                                       @input="e => updateListTags(e.target.value)"
+                                       placeholder="Tags..." 
+                                       class="bare-input bg-black/20 border border-border rounded px-2 py-1 text-xxs outline-none focus:border-primary w-24 md:w-32 text-white">
+                            </div>
+                            <button @click="toggleListFavorite(currentList)" class="text-xs">
+                                <i :class="['fas fa-star', currentList.isFavorite ? 'text-yellow-500' : 'text-gray-600']"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button v-if="isEditMode && selectedRows.length > 0" @click="deleteSelectedRows" class="h-9 px-4 bg-red-500/20 text-red-400 border border-red-500/50 rounded-lg text-xs font-bold transition-all">
+                            Wis ({{ selectedRows.length }})
                         </button>
-                        <button @click="addRow" class="bg-primary-purple text-white px-3 py-1.5 rounded-md text-xs font-bold shadow-md hover:bg-primary-purple/90 transition-all">
-                            <i class="fas fa-plus mr-1"></i> Rij
+                        <button v-if="isEditMode" @click="addRow" class="h-9 px-4 bg-primary text-white rounded-lg text-xs font-bold shadow-lg flex items-center gap-2">
+                            <i class="fas fa-plus"></i> <span class="hidden md:inline">Rij Toevoegen</span>
                         </button>
                     </div>
                 </div>
 
-                <div class="px-6 py-2 border-t border-border-color/50 flex gap-4 items-center">
+                <div class="px-6 py-2 header-search-bar flex items-center gap-4">
                     <div class="relative flex-1">
                         <i class="fas fa-search absolute left-3 top-2.5 text-gray-600 text-xs"></i>
-                        <input v-model="contentSearchQuery" placeholder="Zoek in deze lijst..." class="w-full bg-dark-bg/40 border border-border-color rounded-lg pl-8 pr-3 py-2 text-xs focus:outline-none focus:border-primary-purple transition-all">
-                    </div>
-                    <div v-if="syncPending > 0" class="text-xxs text-orange-400 animate-pulse font-bold whitespace-nowrap">
-                        SYNCING...
+                        <input v-model="contentSearchQuery" placeholder="Zoek in lijst..." class="w-full bg-black/10 border border-border rounded-lg pl-8 pr-3 py-2 text-xs focus:outline-none focus:border-primary transition-all">
                     </div>
                 </div>
             </div>
 
-            <div v-if="isEditMode" class="px-6 py-2 bg-primary-purple/5 border-b border-primary-purple/20 overflow-x-auto flex items-center gap-3">
-                <span class="text-xxs font-bold text-primary-purple uppercase shrink-0">Breedtes (%):</span>
-                <div v-for="col in currentList.columns" :key="col" class="flex flex-col gap-1 shrink-0">
-                    <span class="text-xxs text-gray-500 truncate w-16">{{ col }}</span>
-                    <input type="number" v-model.number="currentList.columnSettings[col].width" @change="saveCurrentList" class="w-16 bg-dark-bg border border-border-color rounded px-1 text-xs text-white">
-                </div>
-                <button @click="deleteList" class="ml-auto text-xxs text-red-400 bg-red-400/10 px-2 py-1 rounded border border-red-400/20">
-                    Lijst Verwijderen
-                </button>
-            </div>
-
-            <div class="flex-1 overflow-auto relative custom-scrollbar" ref="scrollContainer">
-                
-                <div class="sticky top-0 z-30 flex items-center px-6 py-3 column-header text-xxs font-bold text-gray-400 uppercase tracking-widest">
-                    <div class="w-8 shrink-0 text-center">#</div>
-                    <div v-for="col in visibleColumns" :key="col" 
-                         :style="{ flex: `${getColumnWidth(col)} 0 0` }"
-                         class="px-2 flex items-center justify-between group">
-                        <span class="truncate">{{ col }}</span>
-                        <button @click="hideColumn(col)" class="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white transition-all">
-                            <i class="fas fa-eye-slash"></i>
-                        </button>
+            <div class="flex-1 overflow-auto relative custom-scrollbar pb-24 md:pb-0">
+                <div class="sticky top-0 z-30 flex items-center px-6 py-3 column-header text-xxs font-bold text-gray-400 uppercase tracking-widest border-b border-border/50">
+                    <div class="w-10 shrink-0 text-center">
+                        <input v-if="isEditMode" type="checkbox" @change="toggleSelectAll" :checked="allSelected" class="cursor-pointer accent-primary">
+                        <span v-else>#</span>
                     </div>
-                    <div v-if="isEditMode" class="w-10 shrink-0"></div>
+                    <div v-for="col in visibleColumns" :key="col" :style="{ flex: `${getColumnWidth(col)} 0 0` }" class="px-2 flex items-center justify-between group">
+                        <div class="flex-1 min-w-0 flex items-center gap-2">
+                            <input v-if="isEditMode" :value="col" @change="e => renameColumnInline(col, e.target.value)" class="bare-input bg-transparent outline-none text-white w-full uppercase border-b border-transparent focus:border-primary/50">
+                            <span v-else @click="toggleSort(col)" class="truncate cursor-pointer hover:text-white transition-colors">{{ col }}</span>
+                            
+<span v-if="sortKey === col && !isEditMode" class="sort-badge">
+    <i :class="['fas', sortOrder === 1 ? 'fa-caret-up' : 'fa-caret-down']"></i>
+</span>
+                        </div>
+                        <div v-if="isEditMode" class="flex items-center gap-1 opacity-100 transition-all shrink-0">
+                            <button @click="hideColumn(col)" title="Verbergen" class="w-6 h-6 bg-primary/20 text-primary rounded flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
+                                <i class="fas fa-eye-slash text-[10px]"></i>
+                            </button>
+                            <button @click="removeColumnInline(col)" class="text-red-500/50 hover:text-red-500 ml-1"><i class="fas fa-minus-circle"></i></button>
+                        </div>
+                    </div>
+                    <div v-if="isEditMode" class="w-16 shrink-0 text-right flex items-center justify-end gap-2">
+                        <button @click="resetColumns" title="Herstel kolommen" class="text-gray-500 hover:text-white"><i class="fas fa-undo text-xs"></i></button>
+                        <button @click="deleteList" class="text-red-400/50 hover:text-red-400"><i class="fas fa-trash text-xs"></i></button>
+                    </div>
                 </div>
 
-                <div class="divide-y divide-border-color/50">
-                    <div v-for="(row, idx) in filteredRows" :key="idx" class="flex items-center px-6 py-2 hover:bg-white/[0.02] transition-colors group">
-                        <div class="w-8 shrink-0 text-center">
-                            <button @click="toggleRecordFavorite(row)" class="text-xs">
+               <div class="rows-container">
+                    <div v-for="(row, idx) in filteredRows" :key="idx" 
+                         :class="['flex items-center px-6 transition-colors group', isUltraCompact ? 'py-0.5' : 'py-2', row.isFavorite ? 'favorite-row' : '']">
+                        <div class="w-10 shrink-0 text-center flex items-center justify-center">
+                            <input v-if="isEditMode" type="checkbox" :value="row" v-model="selectedRows" class="cursor-pointer accent-primary">
+                            <button v-else @click="toggleRecordFavorite(row)" class="text-xs">
                                 <i :class="[row.isFavorite ? 'fas fa-star text-yellow-500' : 'far fa-star text-gray-700']"></i>
                             </button>
                         </div>
-
-                        <div v-for="col in visibleColumns" :key="col" 
-                             :style="{ flex: `${getColumnWidth(col)} 0 0` }"
-                             class="px-2 truncate">
-                            <input v-if="isEditMode" v-model="row[col]" @change="saveCurrentList" class="w-full bg-transparent border-b border-transparent focus:border-primary-purple/50 py-1 text-sm outline-none text-white">
-                            <div v-else class="text-sm py-1 truncate text-gray-300">{{ row[col] }}</div>
+                        <div v-for="col in visibleColumns" :key="col" :style="{ flex: `${getColumnWidth(col)} 0 0` }" class="px-2 truncate">
+                            <input v-if="isEditMode" v-model="row[col]" @change="saveCurrentList" class="bare-input text-sm py-1 bg-transparent border-b border-transparent focus:border-primary/50 w-full text-white">
+                            <div v-else @click="copyText(row[col])" :class="['py-1 truncate text-gray-300 cursor-copy cell-text', isLargeFont ? 'font-large-mode' : 'font-normal-mode']" v-html="highlight(row[col])"></div>
                         </div>
+                       <div class="w-16 shrink-0 text-right flex items-center justify-end gap-2">
+    <button @click="duplicateRow(row)" 
+            title="Rij dupliceren"
+            class="text-gray-600 hover:text-primary transition-all">
+        <i class="fas fa-copy text-xs"></i>
+    </button>
 
-                        <div v-if="isEditMode" class="w-10 shrink-0 text-right">
-                            <button @click="deleteRow(idx)" class="text-gray-700 hover:text-red-500 transition-all">
-                                <i class="fas fa-trash-alt text-xs"></i>
-                            </button>
-                        </div>
+    <button v-if="isEditMode" 
+            @click="deleteRow(idx)" 
+            title="Rij verwijderen"
+            class="text-gray-700 hover:text-red-500 transition-all">
+        <i class="fas fa-trash-alt text-xs"></i>
+    </button>
+</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div v-if="isCreating" class="absolute inset-0 z-[100] bg-dark-bg/95 flex items-center justify-center p-4">
-            <div class="bg-card-bg p-6 rounded-xl border border-border-color w-full max-w-md shadow-2xl">
-                <h3 class="text-white font-bold mb-4 text-lg">Nieuwe Lijst</h3>
-                <input v-model="newList.name" placeholder="Naam van de lijst..." class="w-full bg-dark-bg border border-border-color rounded-lg p-3 text-sm text-white mb-4 outline-none focus:border-primary-purple">
-                <div class="flex justify-end gap-3">
-                    <button @click="isCreating = false" class="text-gray-400 text-sm">Annuleren</button>
-                    <button @click="saveNewList" class="bg-primary-purple text-white px-6 py-2 rounded-lg font-bold text-sm shadow-lg">Lijst Opslaan</button>
-                </div>
+        <div class="md:hidden fixed bottom-0 left-0 right-0 h-16 sidebar-bg border-t border-border flex items-center justify-around z-[70] mobile-nav-shadow">
+            <button @click="showMobileMenu = !showMobileMenu" :class="['flex flex-col items-center gap-1', showMobileMenu ? 'text-primary' : 'text-gray-500']">
+                <i class="fas fa-list-ul text-lg"></i><span class="text-[9px] font-bold uppercase">Lijsten</span>
+            </button>
+            <button @click="toggleFontSize" :class="['flex flex-col items-center gap-1', isLargeFont ? 'text-primary' : 'text-gray-500']">
+                <span class="text-lg font-bold leading-none">A</span><span class="text-[9px] font-bold uppercase">Grootte</span>
+            </button>
+            <button @click="isUltraCompact = !isUltraCompact" :class="['flex flex-col items-center gap-1', isUltraCompact ? 'text-primary' : 'text-gray-500']">
+                <i :class="['fas text-lg', isUltraCompact ? 'fa-compress-alt' : 'fa-expand-alt']"></i><span class="text-[9px] font-bold uppercase">Compact</span>
+            </button>
+            <button @click="isEditMode = !isEditMode" :class="['flex flex-col items-center gap-1', isEditMode ? 'text-orange-400' : 'text-gray-500']">
+                <i :class="['fas text-lg', isEditMode ? 'fa-check-circle' : 'fa-edit']"></i><span class="text-[9px] font-bold uppercase">{{ isEditMode ? 'Klaar' : 'Bewerk' }}</span>
+            </button>
+        </div>
+
+        <button v-if="isEditMode && currentList" @click="addRow" class="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center z-[71]">
+            <i class="fas fa-plus text-xl"></i>
+        </button>
+    </div>
+
+    <div v-if="isCreating" class="absolute inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+        <div class="sidebar-bg p-6 rounded-xl border border-border w-full max-w-md shadow-2xl">
+            <h3 class="text-white font-bold mb-4">Nieuwe Lijst</h3>
+            <input v-model="newList.name" placeholder="Naam..." class="bare-input w-full bg-black/20 border border-border rounded-lg p-3 text-sm text-white mb-2 outline-none">
+            <input v-model="newList.tag" placeholder="Tag..." class="bare-input w-full bg-black/20 border border-border rounded-lg p-3 text-sm text-white mb-4 outline-none">
+            <div class="flex justify-end gap-3">
+                <button @click="isCreating = false" class="text-gray-400 text-sm">Annuleren</button>
+                <button @click="saveNewList" class="bg-primary text-white px-6 py-2 rounded-lg font-bold">Opslaan</button>
             </div>
         </div>
     </div>
+    <div v-if="showCopyToast" class="copy-toast">Gekopieerd!</div>
 </div>
 
 <script>
-const { createApp, ref, computed, onMounted, watch } = Vue;
-
-const API_URL = 'http://10.10.2.20:5000';
-const CLIENT_ID = 'sandman';
-const APP_NAME = 'listvault';
+const { createApp, ref, computed, onMounted } = Vue;
 
 createApp({
     setup() {
-        const manager = new OfflineManager(API_URL, CLIENT_ID, APP_NAME);
-        
+        const manager = new OfflineManager('http://10.10.2.20:5000', 'sandman', 'listvault');
         const lists = ref([]);
         const currentList = ref(null);
         const syncPending = ref(0);
         const showMobileMenu = ref(false);
         const sidebarSearch = ref('');
         const contentSearchQuery = ref('');
+        const activeTagFilter = ref('');
         const isCreating = ref(false);
         const isEditMode = ref(false);
-        const newList = ref({ name: '' });
+        const isLargeFont = ref(false);
+        const isUltraCompact = ref(false);
+        const newList = ref({ name: '', tag: '' });
+        const newColumnNameInline = ref('');
+        const showCopyToast = ref(false);
+        const sortKey = ref('');
+        const sortOrder = ref(1);
+        const selectedRows = ref([]);
+        
+        const currentThemeClass = ref('theme-default');
+        const themes = [
+            { id: 'default', name: 'Deep Purple', class: 'theme-default', preview: '#8B5CF6' },
+            { id: 'ocean', name: 'Ocean Blue', class: 'theme-ocean', preview: '#0ea5e9' },
+            { id: 'emerald', name: 'Emerald City', class: 'theme-emerald', preview: '#10b981' },
+            { id: 'amber', name: 'Classic Gold', class: 'theme-amber', preview: '#f59e0b' }
+        ];
 
-        // --- Data Fetching ---
+        const setTheme = (id) => {
+            const themeClass = `theme-${id}`;
+            currentThemeClass.value = themeClass;
+            localStorage.setItem('lv_theme', id);
+            document.documentElement.className = 'h-full dark ' + themeClass;
+        };
+
         const refreshLocalData = async () => {
             const data = await manager.getSmartCollection('data_lists');
-            lists.value = data.sort((a,b) => a.name.localeCompare(b.name));
+            lists.value = data;
             if (currentList.value) {
                 const updated = data.find(l => (l.id||l._id) === (currentList.value.id||currentList.value._id));
-                if (updated) {
-                    // Behoud columnSettings als die er nog niet zijn
-                    if (!updated.columnSettings) updated.columnSettings = {};
-                    currentList.value = updated;
-                }
+                if (updated) currentList.value = updated;
             }
         };
 
-        // --- Helpers ---
-        const getColumnWidth = (col) => {
-            if (!currentList.value.columnSettings || !currentList.value.columnSettings[col]) return 100;
-            return currentList.value.columnSettings[col].width || 100;
+        const highlight = (text) => {
+            if (!text) return '';
+            const content = String(text);
+            if (!contentSearchQuery.value) return content;
+            const regex = new RegExp(`(${contentSearchQuery.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return content.replace(regex, '<mark class="search-highlight">$1</mark>');
         };
 
-        const visibleColumns = computed(() => {
-            if (!currentList.value) return [];
-            return currentList.value.columns.filter(col => {
-                const settings = currentList.value.columnSettings[col];
-                return settings ? !settings.hidden : true;
-            });
-        });
-
-        const hasHiddenColumns = computed(() => {
-            if (!currentList.value) return false;
-            return currentList.value.columns.length !== visibleColumns.value.length;
+        const allUniqueTags = computed(() => {
+            const tags = new Set();
+            lists.value.forEach(l => { if(l.tags) l.tags.forEach(t => tags.add(t)); });
+            return Array.from(tags).sort();
         });
 
         const sidebarFilteredLists = computed(() => {
-            if (!sidebarSearch.value) return lists.value;
-            return lists.value.filter(l => l.name.toLowerCase().includes(sidebarSearch.value.toLowerCase()));
+            let res = lists.value;
+            if (sidebarSearch.value) res = res.filter(l => l.name.toLowerCase().includes(sidebarSearch.value.toLowerCase()));
+            if (activeTagFilter.value) res = res.filter(l => l.tags && l.tags.includes(activeTagFilter.value));
+            return res.sort((a, b) => {
+                if (a.isFavorite === b.isFavorite) return a.name.localeCompare(b.name);
+                return a.isFavorite ? -1 : 1;
+            });
+        });
+
+        const groupedLists = computed(() => {
+            const groups = {};
+            sidebarFilteredLists.value.forEach(l => {
+                const tag = (l.tags && l.tags[0]) || 'Overig';
+                if (!groups[tag]) groups[tag] = [];
+                groups[tag].push(l);
+            });
+            return groups;
         });
 
         const filteredRows = computed(() => {
@@ -242,117 +321,114 @@ createApp({
                 const q = contentSearchQuery.value.toLowerCase();
                 rows = rows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
             }
+            if (sortKey.value) {
+                rows.sort((a, b) => String(a[sortKey.value]).localeCompare(String(b[sortKey.value])) * sortOrder.value);
+            }
             return rows.sort((a,b) => (b.isFavorite === true) - (a.isFavorite === true));
         });
 
-        // --- Actions ---
-        const selectList = (list) => {
-            // Zorg voor default settings
-            if (!list.columnSettings) list.columnSettings = {};
-            list.columns.forEach(col => {
-                if (!list.columnSettings[col]) list.columnSettings[col] = { width: 100, hidden: false };
-            });
-            currentList.value = list;
-            showMobileMenu.value = false;
-            isEditMode.value = false;
-            contentSearchQuery.value = '';
-        };
+        const visibleColumns = computed(() => {
+            if (!currentList.value) return [];
+            return currentList.value.columns.filter(c => !currentList.value.hiddenColumns?.includes(c));
+        });
 
-        const hideColumn = (col) => {
-            currentList.value.columnSettings[col].hidden = true;
-            saveCurrentList();
-        };
-
-        const showAllColumns = () => {
-            currentList.value.columns.forEach(col => {
-                currentList.value.columnSettings[col].hidden = false;
-            });
-            saveCurrentList();
-        };
-
-        const toggleListFavorite = (list) => {
-            list.isFavorite = !list.isFavorite;
-            manager.saveSmartDocument('data_lists', list);
-        };
-
-        const saveCurrentList = async () => {
-            if (currentList.value) await manager.saveSmartDocument('data_lists', currentList.value);
-        };
-
-        const addRow = () => {
-            const row = { isFavorite: false };
-            currentList.value.columns.forEach(c => row[c] = '');
-            currentList.value.rows.unshift(row);
-            saveCurrentList();
-        };
-
-        const deleteRow = (idx) => {
-            const row = filteredRows.value[idx];
-            const realIdx = currentList.value.rows.indexOf(row);
-            currentList.value.rows.splice(realIdx, 1);
-            saveCurrentList();
-        };
-
-        const saveNewList = async () => {
-            const cols = ['Naam', 'Omschrijving', 'Status'];
-            const settings = {};
-            cols.forEach(c => settings[c] = { width: 100, hidden: false });
-            
-            const doc = { 
-                name: newList.value.name, 
-                columns: cols, 
-                columnSettings: settings,
-                rows: [], 
-                isFavorite: false 
-            };
-            await manager.saveSmartDocument('data_lists', doc);
-            await refreshLocalData();
-            isCreating.value = false;
-        };
-
-        const deleteList = async () => {
-            if (confirm('Verwijderen?')) {
-                await manager.deleteSmartDocument('data_lists', currentList.value.id || currentList.value._id);
-                currentList.value = null;
-                await refreshLocalData();
-            }
-        };
-
-        const handleImportCSV = (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const lines = e.target.result.split('\n').filter(l => l.trim());
-                const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-                const settings = {};
-                headers.forEach(h => settings[h] = { width: 100, hidden: false });
-                
-                const rows = lines.slice(1).map(line => {
-                    const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-                    const obj = { isFavorite: false };
-                    headers.forEach((h, i) => obj[h] = vals[i] || '');
-                    return obj;
-                });
-                await manager.saveSmartDocument('data_lists', { name: file.name.replace('.csv', ''), columns: headers, columnSettings: settings, rows: rows, isFavorite: false });
-                refreshLocalData();
-            };
-            reader.readAsText(file);
-        };
+        const getColumnWidth = (col) => currentList.value?.columnSettings?.[col]?.width || 100;
 
         onMounted(async () => {
             manager.onSyncChange = (c) => syncPending.value = c;
             manager.onDataChanged = () => refreshLocalData();
             await refreshLocalData();
             manager.refreshCache('data_lists');
+            const savedTheme = localStorage.getItem('lv_theme');
+            if (savedTheme) setTheme(savedTheme);
         });
 
         return {
-            lists, currentList, sidebarFilteredLists, filteredRows, visibleColumns, hasHiddenColumns,
-            showMobileMenu, sidebarSearch, contentSearchQuery, syncPending, isCreating, isEditMode, newList,
-            selectList, addRow, deleteRow, saveCurrentList, toggleListFavorite, toggleRecordFavorite: (r) => { r.isFavorite = !r.isFavorite; saveCurrentList(); },
-            hideColumn, showAllColumns, getColumnWidth, startCreateList: () => { isCreating.value = true; newList.value.name = ''; },
-            saveNewList, deleteList, handleImportCSV
+            lists, currentList, sidebarFilteredLists, groupedLists, filteredRows, visibleColumns, allUniqueTags, activeTagFilter,
+            showMobileMenu, sidebarSearch, contentSearchQuery, syncPending, isCreating, isEditMode, isLargeFont, isUltraCompact, 
+            newList, newColumnNameInline, showCopyToast, sortKey, sortOrder, themes, currentThemeClass, selectedRows,
+            selectList: (l) => { currentList.value = l; showMobileMenu.value = false; isEditMode.value = false; selectedRows.value = []; },
+            highlight, getColumnWidth, saveCurrentList: async () => { if (currentList.value) await manager.saveSmartDocument('data_lists', currentList.value); },
+            setTheme, toggleFontSize: () => isLargeFont.value = !isLargeFont.value,
+            toggleSort: (col) => { if(sortKey.value === col) sortOrder.value *= -1; else { sortKey.value = col; sortOrder.value = 1; } },
+            copyText: (text) => {
+                if(!text || isEditMode.value) return;
+                navigator.clipboard.writeText(String(text));
+                showCopyToast.value = true; setTimeout(() => showCopyToast.value = false, 2000);
+            },
+            addRow: () => {
+                const r = { isFavorite: false }; currentList.value.columns.forEach(c => r[c] = '');
+                currentList.value.rows.unshift(r); manager.saveSmartDocument('data_lists', currentList.value);
+            },
+            deleteRow: (idx) => {
+                const r = filteredRows.value[idx]; currentList.value.rows.splice(currentList.value.rows.indexOf(r), 1);
+                manager.saveSmartDocument('data_lists', currentList.value);
+            },
+            deleteSelectedRows: () => {
+                if (confirm(`Wis ${selectedRows.value.length} geselecteerde rijen?`)) {
+                    currentList.value.rows = currentList.value.rows.filter(r => !selectedRows.value.includes(r));
+                    selectedRows.value = [];
+                    manager.saveSmartDocument('data_lists', currentList.value);
+                }
+            },
+            duplicateRow: (row) => {
+                const r = JSON.parse(JSON.stringify(row)); delete r.id; delete r._id;
+                currentList.value.rows.unshift(r); manager.saveSmartDocument('data_lists', currentList.value);
+            },
+            toggleRecordFavorite: (r) => { r.isFavorite = !r.isFavorite; manager.saveSmartDocument('data_lists', currentList.value); },
+            toggleListFavorite: (list) => { list.isFavorite = !list.isFavorite; manager.saveSmartDocument('data_lists', list); },
+            updateListTags: (val) => { 
+                currentList.value.tags = val.split(',').map(t => t.trim()).filter(t => t !== ''); 
+                manager.saveSmartDocument('data_lists', currentList.value);
+            },
+            hideColumn: (col) => {
+                if (!currentList.value.hiddenColumns) currentList.value.hiddenColumns = [];
+                currentList.value.hiddenColumns.push(col);
+                manager.saveSmartDocument('data_lists', currentList.value);
+            },
+            resetColumns: () => {
+                currentList.value.hiddenColumns = [];
+                manager.saveSmartDocument('data_lists', currentList.value);
+            },
+            toggleSelectAll: (e) => { selectedRows.value = e.target.checked ? [...filteredRows.value] : []; },
+            allSelected: computed(() => filteredRows.value.length > 0 && selectedRows.value.length === filteredRows.value.length),
+            addColumnInline: () => {
+                const n = newColumnNameInline.value.trim();
+                if (n && !currentList.value.columns.includes(n)) {
+                    currentList.value.columns.push(n);
+                    if(!currentList.value.columnSettings) currentList.value.columnSettings = {};
+                    currentList.value.columnSettings[n] = { width: 100, hidden: false };
+                    currentList.value.rows.forEach(r => r[n] = ''); newColumnNameInline.value = '';
+                    manager.saveSmartDocument('data_lists', currentList.value);
+                }
+            },
+            renameColumnInline: (oldName, newName) => {
+                const n = newName.trim(); if (!n || oldName === n) return;
+                const idx = currentList.value.columns.indexOf(oldName);
+                currentList.value.columns[idx] = n;
+                currentList.value.rows.forEach(r => { r[n] = r[oldName]; delete r[oldName]; });
+                manager.saveSmartDocument('data_lists', currentList.value);
+            },
+            removeColumnInline: (name) => {
+                if (confirm(`Verwijder kolom '${name}'?`)) {
+                    currentList.value.columns = currentList.value.columns.filter(c => c !== name);
+                    manager.saveSmartDocument('data_lists', currentList.value);
+                }
+            },
+            saveNewList: async () => {
+                const doc = { name: newList.value.name, tags: [newList.value.tag], columns: ['Naam', 'Info'], columnSettings: {'Naam':{width:100}, 'Info':{width:100}}, rows: [], isFavorite: false };
+                await manager.saveSmartDocument('data_lists', doc); await refreshLocalData(); isCreating.value = false;
+            },
+            deleteList: async () => {
+                if(!currentList.value) return;
+                const lid = currentList.value.id; const sid = currentList.value._id;
+                if(confirm('Lijst definitief verwijderen?')) {
+                    await manager.deleteSmartDocument('data_lists', sid || lid);
+                    lists.value = lists.value.filter(l => l.id !== lid && l._id !== sid);
+                    currentList.value = null;
+                }
+            },
+            startCreateList: () => { isCreating.value = true; newList.value = {name:'', tag:''}; }
         };
     }
 }).mount('#app');

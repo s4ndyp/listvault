@@ -1,0 +1,194 @@
+/* --- THEMA VARIABELEN --- */
+:root {
+    /* Default Thema (Purple) */
+    --primary-color: #8B5CF6;
+    --main-bg: #0F111A;
+    --sidebar-bg: #1E2130;
+    --header-bg: #1a1d29;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --cell-hover: rgba(255, 255, 255, 0.02);
+    
+    /* Nieuwe gesplitste variabelen */
+    --accent-color: var(--primary-color);      /* Voor belangrijke accenten */
+    --icon-color: var(--primary-color);        /* Specifiek voor iconen */
+    --button-bg: var(--primary-color);         /* Achtergrond van knoppen */
+    --selection-color: var(--primary-color);    /* Checkboxes en selecties */
+    --sort-badge-bg: var(--primary-color);      /* De badge bij sorteren */
+    --active-item-bg: rgba(139, 92, 246, 0.2);  /* Actieve lijst item achtergrond */
+    --toast-bg: var(--primary-color);          /* Kopieer melding */
+    --input-focus-border: var(--primary-color); /* Randje bij typen */
+}
+
+.theme-ocean {
+    --primary-color: #0ea5e9;
+    --main-bg: #0c1117;
+    --sidebar-bg: #161b22;
+    --header-bg: #0d1117;  
+    --accent-color: #0ea5e9;
+    --icon-color: #0ea5e9;
+    --button-bg: #0ea5e9;
+    --selection-color: #0ea5e9;
+    --sort-badge-bg: #0ea5e9;
+    --active-item-bg: rgba(14, 165, 233, 0.2);
+    --sticky-header-bg: rgba(14, 165, 233, 1);
+    --toast-bg: #0ea5e9;
+    --input-focus-border: #0ea5e9;
+}
+
+.theme-emerald {
+    --primary-color: #10b981;
+    --main-bg: #06110d;
+    --sidebar-bg: #0d1a14;
+    --header-bg: #09130e;
+    --accent-color: #10b981;
+    --icon-color: #10b981;
+    --button-bg: #10b981;
+    --selection-color: #10b981;
+    --sort-badge-bg: #10b981;
+    --active-item-bg: rgba(16, 185, 129, 0.2);
+    --toast-bg: #10b981;
+    --input-focus-border: #10b981;
+}
+
+.theme-amber {
+    --primary-color: #f59e0b;
+    --main-bg: #120d06;
+    --sidebar-bg: #1d160d;
+    --header-bg: #151009;
+    --accent-color: #f59e0b;
+    --icon-color: #f59e0b;
+    --button-bg: #f59e0b;
+    --selection-color: #f59e0b;
+    --sort-badge-bg: #f59e0b;
+    --active-item-bg: rgba(245, 158, 11, 0.2);
+    --toast-bg: #f59e0b;
+    --input-focus-border: #f59e0b;
+}
+
+/* --- BASE STYLES --- */
+.main-bg { background-color: var(--main-bg); }
+.sidebar-bg { background-color: var(--sidebar-bg); }
+.header-bg { background-color: var(--sidebar-bg); }
+
+/* Gebruik nu de meer specifieke variabelen */
+.text-primary { color: var(--accent-color); }
+.bg-primary { background-color: var(--button-bg); }
+.border-border { border-color: var(--border-color); }
+
+.active-list-item { 
+    background-color: var(--active-item-bg); 
+    border-right: 3px solid var(--accent-color); 
+}
+
+/* Iconen in de zijbalk of header */
+.fas, .far { color: var(--icon-color); }
+/* Favoriete sterren en gele iconen moeten hun eigen kleur behouden */
+.text-yellow-500 { color: #eab308 !important; }
+
+.text-glow { text-shadow: 0 0 10px rgba(139, 92, 246, 0.3); }
+
+/* --- INPUT FIX --- */
+.bare-input {
+    background: transparent !important;
+    border: none;
+    outline: none;
+    color: white;
+}
+
+.column-header {
+    background-color: var(--header-bg) !important;
+    position: sticky;
+    top: 0;
+    z-index: 50; /* Iets hoger gezet voor de zekerheid */
+    opacity: 1 !important;
+    border-bottom: 2px solid var(--accent-color);
+    
+    /* Voeg deze toe om Tailwind in de HTML te kunnen negeren */
+    display: flex;
+    align-items: center;
+    padding: 12px 24px; /* Dit vervangt px-6 py-3 */
+    min-height: 48px;
+}
+
+
+/* We richten ons specifiek op de randen van de rijen binnen de container */
+.rows-container > div {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-top: none !important;
+}
+
+/* Haal de allerlaatste lijn weg voor een strakke look */
+.rows-container > div:last-child {
+    border-bottom: none !important;
+}
+
+.column-header button {
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+.column-header button:hover {
+    opacity: 1;
+}
+
+.sort-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+/*  background-color: var(--sort-badge-bg);  */
+    color: white !important;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    margin-left: 6px;
+    font-size: 15px; /* Iets groter voor de caret */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.header-search-bar {
+    /* Gebruik var(--border-color) voor een subtiele lijn */
+    /* Of gebruik var(--accent-color) als je juist een gekleurde lijn wilt */
+    border-top: 1px solid var(--border-color); 
+    background-color: transparent; /* Zorgt dat hij de kleur van de header-bg overneemt */
+}
+
+/* --- TABLE ROW FAVORITE --- 
+.favorite-row { background-color: rgba(234, 179, 8, 0.05); }
+*/
+/* --- TOASTS --- */
+.copy-toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--toast-bg);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.cursor-copy { cursor: copy; }
+
+.font-normal-mode { 
+    font-size: 0.875rem !important; 
+    line-height: 1.25rem !important; 
+}
+
+.font-large-mode { 
+    font-size: 1.15rem !important; 
+    line-height: 1.6rem !important; 
+    font-weight: 500; 
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+    accent-color: var(--selection-color);
+    cursor: pointer;
+}
+
+/* Fix voor tekstkleur in bewerkstand */
+.bare-input:focus {
+    border-bottom: 1px solid var(--input-focus-border);
+}
