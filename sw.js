@@ -4,9 +4,9 @@ const ASSETS = [
   'app_styles.css',
   'offline_managerv2.js',
   'tailwind.js',
-  'https://unpkg.com/vue@3/dist/vue.global.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.4/dexie.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
+  'vue.global.js',
+  'dexie.min.js',
+  'all.min.css'
 ];
 
 // Installatie: Bestanden in de cache zetten
