@@ -4,8 +4,8 @@
   "description": "De ultieme offline-first lijst manager",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#0F111A",
-  "theme_color": "#8B5CF6",
+"theme_color": "#0F111A",
+"background_color": "#0F111A",
   "icons": [
     {
       "src": "listvault.png",
