@@ -6,7 +6,7 @@ const ASSETS = [
   'tailwind.js',
   'vue.global.js',
   'dexie.min.js',
-  'all.min.css'
+ 
 ];
 
 // Installatie: Bestanden in de cache zetten
