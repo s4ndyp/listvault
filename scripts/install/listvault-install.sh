@@ -12,7 +12,7 @@ update_os
 source <(curl -fsSL "${XDIO_SCRIPTS_LIB_URL:-https://raw.githubusercontent.com/s4ndyp/scripts/main}/lib/xdio-compose-install.sh")
 
 APP_DIR="/opt/listvault"
-COMPOSE_URL="${LISTVAULT_COMPOSE_URL:-https://raw.githubusercontent.com/s4ndyp/listvault/main/docker-compose.yml}"
+COMPOSE_URL="${LISTVAULT_COMPOSE_URL:-https://raw.githubusercontent.com/s4ndyp/listvault/HEAD/docker-compose.yml}"
 HOST_PORT="${LISTVAULT_PORT:-80}"
 
 setup_docker
@@ -65,7 +65,7 @@ Image:        ghcr.io/s4ndyp/listvault:latest
 
 PWA — data staat lokaal in de browser (IndexedDB), geen server-volume.
 Geen login — alleen vertrouwd netwerk of reverse proxy.
-See: https://github.com/s4ndyp/listvault/blob/main/readme.md
+See: https://github.com/s4ndyp/listvault/blob/HEAD/readme.md
 EOF
 chmod 600 ~/listvault.creds
 

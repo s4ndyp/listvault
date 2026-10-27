@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ListVault — Proxmox LXC + Docker (installatiebestanden in s4ndyp/listvault)
-# bash -c "$(curl -fsSL https://raw.githubusercontent.com/s4ndyp/listvault/main/scripts/listvault/listvault.sh)"
+# bash -c "$(curl -fsSL https://raw.githubusercontent.com/s4ndyp/listvault/HEAD/scripts/listvault/listvault.sh)"
 
-export COMMUNITY_SCRIPTS_URL="${COMMUNITY_SCRIPTS_URL:-https://raw.githubusercontent.com/s4ndyp/listvault/main/scripts}"
+export COMMUNITY_SCRIPTS_URL="${COMMUNITY_SCRIPTS_URL:-https://raw.githubusercontent.com/s4ndyp/listvault/HEAD/scripts}"
 export REPO_SLUG="${REPO_SLUG:-s4ndyp/listvault}"
-export XDIO_SCRIPT_URL="${XDIO_SCRIPT_URL:-https://github.com/s4ndyp/listvault/blob/main/scripts/listvault/listvault.sh}"
+export XDIO_SCRIPT_URL="${XDIO_SCRIPT_URL:-https://github.com/s4ndyp/listvault/blob/HEAD/scripts/listvault/listvault.sh}"
 export XDIO_SCRIPTS_LIB_URL="${XDIO_SCRIPTS_LIB_URL:-https://raw.githubusercontent.com/s4ndyp/scripts/main}"
 
 _cs_boot="${COMMUNITY_SCRIPTS_CORE_DIR:-$(dirname "${BASH_SOURCE[0]}")/../../core}/core/build.func"
