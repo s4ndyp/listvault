@@ -258,7 +258,8 @@ class OfflineManager {
                         delete payload.collection;
 
                         const response = await this.gateway.saveDocument(item.collection, payload);
-                        if ((item.action === 'POST' || item.action === 'PATCH') && response && response._id) {
+                        const writeAction = item.action === 'PUT' ? 'PATCH' : item.action;
+                        if ((writeAction === 'POST' || writeAction === 'PATCH') && response && response._id) {
                             await this.db.data.update(dexieId, { _id: response._id });
                         }
                     }
