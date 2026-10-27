@@ -1,4 +1,4 @@
-const CACHE_NAME = 'listvault-v5-pb';
+const CACHE_NAME = 'listvault-v6-pb80';
 const ASSETS = [
   'index.html',
   'app_styles.css',
@@ -28,6 +28,13 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(event.request));
+    return;
+  }
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('index.html'))
+    );
     return;
   }
 

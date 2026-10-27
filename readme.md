@@ -31,7 +31,7 @@ Zelf builden:
 
 ```bash
 docker build -t listvault:local .
-docker run --rm -p 8099:8080 -v listvault_data:/pb/pb_data listvault:local
+docker run --rm -p 8099:80 -v listvault_data:/pb/pb_data listvault:local
 ```
 
 Data blijft in Docker-volume `listvault_data`.

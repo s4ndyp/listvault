@@ -18,6 +18,10 @@ COPY ./pb_migrations /pb/pb_migrations
 WORKDIR /pb
 VOLUME ["/pb/pb_data"]
 
-EXPOSE 8080
+EXPOSE 80
 
-CMD ["/pb/pocketbase", "serve", "--http=0.0.0.0:8080"]
+CMD ["/pb/pocketbase", "serve", \
+  "--http=0.0.0.0:80", \
+  "--dir=/pb/pb_data", \
+  "--publicDir=/pb/pb_public", \
+  "--migrationsDir=/pb/pb_migrations"]
