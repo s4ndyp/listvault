@@ -1,12 +1,23 @@
-FROM nginx:alpine
+FROM alpine:latest
 
-# Verwijder de standaard nginx bestanden
-RUN rm -rf /usr/share/nginx/html/*
+ARG PB_VERSION=0.40.1
 
-# Kopieer ALLE bestanden uit de huidige map naar de container
-COPY . /usr/share/nginx/html/
+RUN apk add --no-cache \
+    ca-certificates \
+    unzip \
+    wget
 
-# Kopieer onze eigen nginx configuratie
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+ADD https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip /tmp/pb.zip
+RUN unzip /tmp/pb.zip -d /pb/ \
+    && rm /tmp/pb.zip \
+    && chmod +x /pb/pocketbase
 
-EXPOSE 80
+COPY ./pb_public /pb/pb_public
+COPY ./pb_migrations /pb/pb_migrations
+
+WORKDIR /pb
+VOLUME ["/pb/pb_data"]
+
+EXPOSE 8080
+
+CMD ["/pb/pocketbase", "serve", "--http=0.0.0.0:8080"]

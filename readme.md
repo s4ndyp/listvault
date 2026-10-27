@@ -1,6 +1,14 @@
 # ListVault Pro
 
-Themeable **PWA** voor lijsten, favorieten en tags — volledig client-side (Vue 3 + IndexedDB via Dexie). Werkt offline via service worker.
+Themeable **PWA** voor lijsten, favorieten en tags. **Vue 3** + **PocketBase** (server) met **Dexie**-cache en outbox voor offline werken.
+
+## Stack
+
+| Onderdeel | Rol |
+|-----------|-----|
+| **PocketBase 0.40** | API + opslag (`data_lists` collectie) |
+| **pb_public/** | Static UI (zelfde origin als `/api`) |
+| **Dexie** | Lokale cache + sync-outbox |
 
 ## Lokaal / Docker
 
@@ -9,20 +17,28 @@ docker compose pull
 docker compose up -d
 ```
 
-Open [http://localhost:8099](http://localhost:8099) (standaard mapping in `docker-compose.yml`). Pas de host-poort aan in `docker-compose.yml` of zet `LISTVAULT_PORT` bij Proxmox-installatie.
+Open [http://localhost:8099](http://localhost:8099). PocketBase-admin: [http://localhost:8099/_/](http://localhost:8099/_/)
 
-Image: `ghcr.io/s4ndyp/listvault:latest` (gebouwd via GitHub Actions op `main` / `beta`). Bij een privé-package: `docker login ghcr.io`.
+Eerste superuser (optioneel):
+
+```bash
+docker compose exec app /pb/pocketbase superuser upsert admin@example.com 'kies-een-wachtwoord'
+```
+
+Image: `ghcr.io/s4ndyp/listvault:latest` (GitHub Actions op `main` / `beta`). Privé-package: `docker login ghcr.io`.
 
 Zelf builden:
 
 ```bash
 docker build -t listvault:local .
-docker run --rm -p 8080:80 listvault:local
+docker run --rm -p 8099:8080 -v listvault_data:/pb/pb_data listvault:local
 ```
+
+Data blijft in Docker-volume `listvault_data`.
 
 ## Deploy op Proxmox (LXC + Docker)
 
-Uitrol via het **installatiescript in deze repo** (Xdio / [community-scripts](https://github.com/community-scripts/ProxmoxVE)-stijl). Gedeelde helpers komen uit [s4ndyp/scripts](https://github.com/s4ndyp/scripts).
+Uitrol via [scripts/listvault/listvault.sh](scripts/listvault/listvault.sh) (Xdio / [s4ndyp/scripts](https://github.com/s4ndyp/scripts) helpers).
 
 Op de **Proxmox host** als root:
 
@@ -30,33 +46,28 @@ Op de **Proxmox host** als root:
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/s4ndyp/listvault/HEAD/scripts/listvault/listvault.sh)"
 ```
 
-(`HEAD` = default branch van deze repo; geen vaste branchnaam in het pad.)
-
-- Installatiescript: [scripts/listvault/listvault.sh](scripts/listvault/listvault.sh)
-- LXC-install: [scripts/install/listvault-install.sh](scripts/install/listvault-install.sh)
-
 Standaard: **1 CPU**, **1 GB RAM**, **4 GB disk**; app op **poort 80** in de LXC (`http://<IP>/`).
-
-Optioneel vóór install op de host:
 
 | Variabele | Default | Beschrijving |
 |-----------|---------|--------------|
 | `GHCR_TOKEN` | — | Pull van privé GHCR-package |
 | `LISTVAULT_PORT` | `80` | Host-poort in de LXC |
-| `LISTVAULT_COMPOSE_URL` | `HEAD/docker-compose.yml` op GitHub | Ander compose-bestand |
+| `LISTVAULT_COMPOSE_URL` | `HEAD/docker-compose.yml` | Ander compose-bestand |
 
-**Update** in de container: `update`, of handmatig:
+**Update** in de container: `update`, of:
 
 ```bash
 cd /opt/listvault && docker compose pull && docker compose up -d
 ```
 
-## PWA installeren
+## PWA
 
-1. Open de app in Chrome/Safari (HTTPS of localhost).
+1. Open de app via HTTPS of localhost.
 2. **Toevoegen aan startscherm** / **Installeren**.
-3. Data blijft in de browser op dat apparaat.
+3. Offline: wijzigingen in Dexie; sync bij verbinding naar PocketBase.
 
 ## Beveiliging
 
-Geen server-side login. Gebruik alleen op een vertrouwd netwerk of achter een reverse proxy met authenticatie als de instance bereikbaar is vanaf het internet.
+Collectie-regels zijn **open** (zelfde model als Tinynote/TrackNote): bedoeld voor persoonlijke instances op een vertrouwd netwerk. Gebruik een reverse proxy met auth als de service bereikbaar is vanaf internet.
+
+Migrations staan in `pb_migrations/`; schema: `data_lists` met o.a. `name`, `tags`, `columns`, `rows` (JSON).

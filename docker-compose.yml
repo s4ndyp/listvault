@@ -1,5 +1,4 @@
-# Dockhand / productie: image uit GHCR (GitHub Actions op main/beta).
-# Host-poort 8099 wordt door het Proxmox-installscript naar 80 gezet.
+# PocketBase + static UI (pb_public). Image via GitHub Actions → GHCR.
 
 services:
   app:
@@ -8,4 +7,15 @@ services:
     container_name: listvault
     restart: unless-stopped
     ports:
-      - "8099:80"
+      - "8099:8080"
+    volumes:
+      - listvault_data:/pb/pb_data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  listvault_data:

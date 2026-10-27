@@ -21,7 +21,7 @@ xdio_ghcr_login
 msg_info "Preparing ListVault stack"
 mkdir -p "${APP_DIR}"
 curl -fsSL "${COMPOSE_URL}" -o "${APP_DIR}/docker-compose.yml"
-sed -i -E "s/\"8099:80\"/\"${HOST_PORT}:80\"/" "${APP_DIR}/docker-compose.yml"
+sed -i -E "s/\"8099:8080\"/\"${HOST_PORT}:8080\"/" "${APP_DIR}/docker-compose.yml"
 msg_ok "Prepared ListVault stack"
 
 msg_info "Pulling ListVault image"
@@ -39,7 +39,7 @@ msg_ok "Started ListVault"
 msg_info "Waiting for ListVault"
 _ready=0
 for _i in $(seq 1 30); do
-  if curl -sf "http://127.0.0.1:${HOST_PORT}/" >/dev/null 2>&1; then
+  if curl -sf "http://127.0.0.1:${HOST_PORT}/api/health" >/dev/null 2>&1; then
     _ready=1
     break
   fi
@@ -63,8 +63,10 @@ App URL:      ${PORTAL_URL}
 Compose file: ${APP_DIR}/docker-compose.yml
 Image:        ghcr.io/s4ndyp/listvault:latest
 
-PWA — data staat lokaal in de browser (IndexedDB), geen server-volume.
-Geen login — alleen vertrouwd netwerk of reverse proxy.
+Data:         PocketBase volume listvault_data (/pb/pb_data)
+Admin UI:     ${PORTAL_URL}/_/
+Collecties:   data_lists (open rules — vertrouwd netwerk)
+Offline:      Dexie-cache + outbox sync naar PocketBase
 See: https://github.com/s4ndyp/listvault/blob/HEAD/readme.md
 EOF
 chmod 600 ~/listvault.creds
