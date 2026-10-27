@@ -307,7 +307,7 @@
             </div>
         </div>
     </div>
-    <div v-if="showCopyToast" class="copy-toast">Gekopieerd!</div>
+    <div v-if="showCopyToast" class="copy-toast">{{ importToast ? 'Geïmporteerd!' : 'Gekopieerd!' }}</div>
 </div>
 
 <script>
@@ -412,6 +412,103 @@ createApp({
 
         const getColumnWidth = (col) => currentList.value?.columnSettings?.[col]?.width || 100;
 
+        const parseCSV = (text) => {
+            const lines = text.split(/\r?\n/).filter((line) => line.trim() !== '');
+            if (!lines.length) return { columns: [], rows: [] };
+
+            const delimiter =
+                lines[0].includes(';') && !lines[0].includes(',') ? ';' : ',';
+
+            const parseLine = (line) => {
+                const cells = [];
+                let cur = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const ch = line[i];
+                    if (ch === '"') {
+                        if (inQuotes && line[i + 1] === '"') {
+                            cur += '"';
+                            i++;
+                        } else {
+                            inQuotes = !inQuotes;
+                        }
+                    } else if (ch === delimiter && !inQuotes) {
+                        cells.push(cur);
+                        cur = '';
+                    } else {
+                        cur += ch;
+                    }
+                }
+                cells.push(cur);
+                return cells.map((c) => c.trim());
+            };
+
+            const columns = parseLine(lines[0]).filter((c) => c !== '');
+            if (!columns.length) return { columns: [], rows: [] };
+
+            const rows = lines.slice(1).map((line) => {
+                const vals = parseLine(line);
+                const row = { isFavorite: false };
+                columns.forEach((col, idx) => {
+                    row[col] = vals[idx] ?? '';
+                });
+                return row;
+            });
+
+            return { columns, rows };
+        };
+
+        const handleImportCSV = async (event) => {
+            const input = event.target;
+            const file = input.files?.[0];
+            input.value = '';
+            if (!file) return;
+
+            try {
+                const { columns, rows } = parseCSV(await file.text());
+                if (!columns.length) {
+                    alert('Leeg of ongeldig CSV-bestand.');
+                    return;
+                }
+
+                const baseName = file.name.replace(/\.csv$/i, '').trim() || 'Import';
+                const columnSettings = {};
+                columns.forEach((col) => {
+                    columnSettings[col] = { width: 120, hidden: false };
+                });
+
+                const doc = {
+                    name: baseName,
+                    tags: ['import'],
+                    columns,
+                    columnSettings,
+                    hiddenColumns: [],
+                    rows,
+                    isFavorite: false,
+                };
+
+                const saved = await manager.saveSmartDocument('data_lists', doc);
+                await refreshLocalData();
+
+                const pick =
+                    lists.value.find((l) => l._id && saved._id && l._id === saved._id) ||
+                    lists.value.find((l) => l.id === saved.id) ||
+                    lists.value.find((l) => l.name === baseName);
+                if (pick) {
+                    currentList.value = pick;
+                    showMobileMenu.value = false;
+                    isEditMode.value = false;
+                    selectedRows.value = [];
+                }
+
+                showCopyToast.value = true;
+                setTimeout(() => (showCopyToast.value = false), 2000);
+            } catch (err) {
+                console.error('[Import CSV]', err);
+                alert('Import mislukt. Controleer het CSV-formaat (eerste regel = kolomnamen).');
+            }
+        };
+
 onMounted(async () => {
     manager.onSyncChange = (c) => syncPending.value = c;
     manager.onDataChanged = () => refreshLocalData();
@@ -513,7 +610,8 @@ onMounted(async () => {
                     currentList.value = null;
                 }
             },
-            startCreateList: () => { isCreating.value = true; newList.value = {name:'', tag:''}; }
+            startCreateList: () => { isCreating.value = true; newList.value = {name:'', tag:''}; },
+            handleImportCSV,
         };
     }
 }).mount('#app');
