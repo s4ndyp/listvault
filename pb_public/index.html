@@ -315,7 +315,7 @@ const { createApp, ref, computed, onMounted } = Vue;
 
 createApp({
     setup() {
-        const manager = new OfflineManager('http://10.10.2.20:5000', 'sandman', 'listvault');
+        const manager = new OfflineManager('', 'listvault', 'listvault');
         const lists = ref([]);
         const currentList = ref(null);
         const syncPending = ref(0);
