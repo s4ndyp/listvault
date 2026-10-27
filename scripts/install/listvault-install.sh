@@ -21,7 +21,11 @@ xdio_ghcr_login
 msg_info "Preparing ListVault stack"
 mkdir -p "${APP_DIR}"
 curl -fsSL "${COMPOSE_URL}" -o "${APP_DIR}/docker-compose.yml"
-sed -i -E "s/\"8099:8080\"/\"${HOST_PORT}:8080\"/" "${APP_DIR}/docker-compose.yml"
+# Oude installs: 8099:80 of 8099:8080 — app luistert weer op :80 in de container
+sed -i -E \
+  -e "s/\"8099:8080\"/\"${HOST_PORT}:80\"/" \
+  -e "s/\"8099:80\"/\"${HOST_PORT}:80\"/" \
+  "${APP_DIR}/docker-compose.yml"
 msg_ok "Prepared ListVault stack"
 
 msg_info "Pulling ListVault image"

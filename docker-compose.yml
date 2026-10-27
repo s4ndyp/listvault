@@ -1,4 +1,4 @@
-# PocketBase + static UI (pb_public). Image via GitHub Actions → GHCR.
+# PocketBase + static UI (pb_public). Container luistert op poort 80 (zoals oude nginx-setup).
 
 services:
   app:
@@ -7,11 +7,11 @@ services:
     container_name: listvault
     restart: unless-stopped
     ports:
-      - "8099:8080"
+      - "8099:80"
     volumes:
       - listvault_data:/pb/pb_data
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/api/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/api/health"]
       interval: 15s
       timeout: 5s
       retries: 5
