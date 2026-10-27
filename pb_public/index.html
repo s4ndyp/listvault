@@ -126,18 +126,35 @@
             </div>
         </div>
 
- <div class="flex-1 overflow-y-auto px-2 py-2 space-y-1 custom-scrollbar">
-    <div v-for="list in sidebarFilteredLists" :key="list.id || list._id" @click="selectList(list)" 
-         :class="['flex items-center px-3 py-2 text-sm rounded-md cursor-pointer transition-all', 
-                  currentList && (currentList.id === list.id || currentList._id === list._id) ? 'active-list-item text-white' : 'hover:bg-white/5']">
-        <svg 
-  class="w-3 h-3 mr-3 fill-current" 
-  :class="list.isFavorite ? 'text-yellow-500' : 'text-gray-500'">
-  <use :href="list.isFavorite ? '#icon-star' : '#icon-star-outline'"></use>
-</svg>
-        <span class="truncate flex-1">{{ list.name }}</span>
-    </div>
-</div>
+        <div class="flex-1 overflow-y-auto px-2 py-2 custom-scrollbar">
+            <div class="grid grid-cols-2 gap-2">
+                <button
+                    type="button"
+                    v-for="list in sidebarFilteredLists"
+                    :key="list.id || list._id"
+                    @click="selectList(list)"
+                    :class="[
+                        'list-tile flex flex-col items-start text-left min-h-[4.75rem] p-2.5 rounded-lg border border-border transition-all',
+                        currentList && (currentList.id === list.id || currentList._id === list._id)
+                            ? 'active-list-item text-white'
+                            : 'bg-black/10 hover:bg-white/10 hover:border-white/20'
+                    ]"
+                >
+                    <div class="flex w-full items-start justify-between gap-1 mb-1.5">
+                        <svg
+                            class="w-3.5 h-3.5 shrink-0 fill-current mt-0.5"
+                            :class="list.isFavorite ? 'text-yellow-500' : 'text-gray-500'"
+                        >
+                            <use :href="list.isFavorite ? '#icon-star' : '#icon-star-outline'"></use>
+                        </svg>
+                        <span v-if="list.rows?.length" class="text-[10px] text-gray-500 tabular-nums">{{ list.rows.length }}</span>
+                    </div>
+                    <span class="text-xs font-semibold leading-snug line-clamp-2 w-full break-words">{{ list.name }}</span>
+                    <span v-if="list.tags && list.tags[0]" class="text-[10px] text-gray-500 truncate w-full mt-auto pt-1">{{ list.tags[0] }}</span>
+                </button>
+            </div>
+            <p v-if="sidebarFilteredLists.length === 0" class="text-center text-xs text-gray-500 py-6 px-2">Geen lijsten gevonden</p>
+        </div>
 
         <div class="p-4 border-t border-border bg-black/10 grid grid-cols-2 gap-2 mb-16 md:mb-0">
             <button @click="startCreateList" class="py-2 bg-primary text-white rounded-lg text-xs font-bold">Nieuw</button>
