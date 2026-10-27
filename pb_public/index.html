@@ -121,8 +121,8 @@
 
         <div class="px-4 pb-2">
             <div class="flex flex-wrap gap-1">
-                <button @click="activeTagFilter = ''" :class="['px-2 py-0.5 rounded text-xxs border border-border', !activeTagFilter ? 'bg-primary text-white' : 'text-gray-500']">Alles</button>
-                <button v-for="tag in allUniqueTags" :key="tag" @click="activeTagFilter = tag" :class="['px-2 py-0.5 rounded text-xxs border border-border', activeTagFilter === tag ? 'bg-primary text-white' : 'text-gray-500']">{{ tag }}</button>
+                <button @click="activeTagFilter = ''" :class="['sidebar-tag-filter px-2 py-0.5 rounded text-xxs', !activeTagFilter ? 'sidebar-tag-active' : '']">Alles</button>
+                <button v-for="tag in allUniqueTags" :key="tag" @click="activeTagFilter = tag" :class="['sidebar-tag-filter px-2 py-0.5 rounded text-xxs', activeTagFilter === tag ? 'sidebar-tag-active' : '']">{{ tag }}</button>
             </div>
         </div>
 
@@ -134,23 +134,23 @@
                     :key="list.id || list._id"
                     @click="selectList(list)"
                     :class="[
-                        'list-tile flex flex-col items-start text-left min-h-[4.75rem] p-2.5 rounded-lg border border-border transition-all',
+                        'list-tile flex flex-col items-start text-left min-h-[4.75rem] p-2.5 rounded-lg border transition-all',
                         currentList && (currentList.id === list.id || currentList._id === list._id)
                             ? 'active-list-item text-white'
-                            : 'bg-black/10 hover:bg-white/10 hover:border-white/20'
+                            : 'list-tile-default'
                     ]"
                 >
                     <div class="flex w-full items-start justify-between gap-1 mb-1.5">
                         <svg
                             class="w-3.5 h-3.5 shrink-0 fill-current mt-0.5"
-                            :class="list.isFavorite ? 'text-yellow-500' : 'text-gray-500'"
+                            :class="list.isFavorite ? 'text-yellow-500' : 'list-tile-star-muted'"
                         >
                             <use :href="list.isFavorite ? '#icon-star' : '#icon-star-outline'"></use>
                         </svg>
-                        <span v-if="list.rows?.length" class="text-[10px] text-gray-500 tabular-nums">{{ list.rows.length }}</span>
+                        <span v-if="list.rows?.length" class="list-tile-meta text-[10px] tabular-nums">{{ list.rows.length }}</span>
                     </div>
                     <span class="text-xs font-semibold leading-snug line-clamp-2 w-full break-words">{{ list.name }}</span>
-                    <span v-if="list.tags && list.tags[0]" class="text-[10px] text-gray-500 truncate w-full mt-auto pt-1">{{ list.tags[0] }}</span>
+                    <span v-if="list.tags && list.tags[0]" class="list-tile-tag-label text-[10px] truncate w-full mt-auto pt-1">{{ list.tags[0] }}</span>
                 </button>
             </div>
             <p v-if="sidebarFilteredLists.length === 0" class="text-center text-xs text-gray-500 py-6 px-2">Geen lijsten gevonden</p>

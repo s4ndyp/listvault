@@ -17,6 +17,13 @@
     --active-item-bg: rgba(139, 92, 246, 0.2);  /* Actieve lijst item achtergrond */
     --toast-bg: var(--primary-color);          /* Kopieer melding */
     --input-focus-border: var(--primary-color); /* Randje bij typen */
+    --sidebar-tile-bg: rgba(139, 92, 246, 0.12);
+    --sidebar-tile-border: rgba(139, 92, 246, 0.32);
+    --sidebar-tile-hover-bg: rgba(139, 92, 246, 0.2);
+    --sidebar-tag-bg: rgba(139, 92, 246, 0.16);
+    --sidebar-tag-text: #ddd6fe;
+    --sidebar-tag-border: rgba(139, 92, 246, 0.38);
+    --sidebar-meta-text: rgba(221, 214, 254, 0.75);
 }
 
 .theme-ocean {
@@ -33,6 +40,13 @@
     --sticky-header-bg: rgba(14, 165, 233, 1);
     --toast-bg: #0ea5e9;
     --input-focus-border: #0ea5e9;
+    --sidebar-tile-bg: rgba(14, 165, 233, 0.12);
+    --sidebar-tile-border: rgba(14, 165, 233, 0.32);
+    --sidebar-tile-hover-bg: rgba(14, 165, 233, 0.2);
+    --sidebar-tag-bg: rgba(14, 165, 233, 0.16);
+    --sidebar-tag-text: #bae6fd;
+    --sidebar-tag-border: rgba(14, 165, 233, 0.38);
+    --sidebar-meta-text: rgba(186, 230, 253, 0.8);
 }
 
 .theme-emerald {
@@ -48,6 +62,13 @@
     --active-item-bg: rgba(16, 185, 129, 0.2);
     --toast-bg: #10b981;
     --input-focus-border: #10b981;
+    --sidebar-tile-bg: rgba(16, 185, 129, 0.12);
+    --sidebar-tile-border: rgba(16, 185, 129, 0.32);
+    --sidebar-tile-hover-bg: rgba(16, 185, 129, 0.2);
+    --sidebar-tag-bg: rgba(16, 185, 129, 0.16);
+    --sidebar-tag-text: #a7f3d0;
+    --sidebar-tag-border: rgba(16, 185, 129, 0.38);
+    --sidebar-meta-text: rgba(167, 243, 208, 0.8);
 }
 
 .theme-amber {
@@ -63,6 +84,13 @@
     --active-item-bg: rgba(245, 158, 11, 0.2);
     --toast-bg: #f59e0b;
     --input-focus-border: #f59e0b;
+    --sidebar-tile-bg: rgba(245, 158, 11, 0.12);
+    --sidebar-tile-border: rgba(245, 158, 11, 0.34);
+    --sidebar-tile-hover-bg: rgba(245, 158, 11, 0.22);
+    --sidebar-tag-bg: rgba(245, 158, 11, 0.18);
+    --sidebar-tag-text: #fde68a;
+    --sidebar-tag-border: rgba(245, 158, 11, 0.4);
+    --sidebar-meta-text: rgba(253, 230, 138, 0.85);
 }
 
 /* --- BASE STYLES --- */
@@ -83,6 +111,51 @@
 
 .list-tile {
     -webkit-tap-highlight-color: transparent;
+}
+
+.list-tile-default {
+    background-color: var(--sidebar-tile-bg);
+    border-color: var(--sidebar-tile-border) !important;
+}
+
+.list-tile-default:hover {
+    background-color: var(--sidebar-tile-hover-bg);
+    border-color: var(--accent-color) !important;
+}
+
+.list-tile-star-muted {
+    color: var(--accent-color);
+    opacity: 0.45;
+}
+
+.list-tile-meta {
+    color: var(--sidebar-meta-text);
+}
+
+.list-tile-tag-label {
+    color: var(--sidebar-tag-text);
+    font-weight: 600;
+}
+
+.sidebar-tag-filter {
+    background-color: var(--sidebar-tag-bg);
+    border: 1px solid var(--sidebar-tag-border);
+    color: var(--sidebar-tag-text);
+    font-weight: 600;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-tag-filter:hover {
+    background-color: var(--sidebar-tile-hover-bg);
+    border-color: var(--accent-color);
+    color: #fff;
+}
+
+.sidebar-tag-active {
+    background-color: var(--button-bg) !important;
+    border-color: var(--accent-color) !important;
+    color: #fff !important;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-color) 40%, transparent);
 }
 
 /* Iconen in de zijbalk of header */
