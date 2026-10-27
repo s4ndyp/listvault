@@ -338,6 +338,7 @@ createApp({
         const newList = ref({ name: '', tag: '' });
         const newColumnNameInline = ref('');
         const showCopyToast = ref(false);
+        const importToast = ref(false);
         const sortKey = ref('');
         const sortOrder = ref(1);
         const selectedRows = ref([]);
@@ -494,8 +495,12 @@ createApp({
                     selectedRows.value = [];
                 }
 
+                importToast.value = true;
                 showCopyToast.value = true;
-                setTimeout(() => (showCopyToast.value = false), 2000);
+                setTimeout(() => {
+                    showCopyToast.value = false;
+                    importToast.value = false;
+                }, 2000);
             } catch (err) {
                 console.error('[Import CSV]', err);
                 alert('Import mislukt. Controleer het CSV-formaat (eerste regel = kolomnamen).');
@@ -520,7 +525,7 @@ onMounted(async () => {
         return {
             lists, currentList, sidebarFilteredLists, groupedLists, filteredRows, visibleColumns, allUniqueTags, activeTagFilter,
             showMobileMenu, sidebarSearch, contentSearchQuery, syncPending, isCreating, isEditMode, isLargeFont, isUltraCompact, 
-            newList, newColumnNameInline, showCopyToast, sortKey, sortOrder, themes, currentThemeClass, selectedRows,
+            newList, newColumnNameInline, showCopyToast, importToast, sortKey, sortOrder, selectedRows,
             selectList: (l) => { currentList.value = l; showMobileMenu.value = false; isEditMode.value = false; selectedRows.value = []; },
             highlight, getColumnWidth, saveCurrentList: async () => { if (currentList.value) await manager.saveSmartDocument('data_lists', currentList.value); },
             toggleFontSize: () => isLargeFont.value = !isLargeFont.value,
@@ -528,7 +533,9 @@ onMounted(async () => {
             copyText: (text) => {
                 if(!text || isEditMode.value) return;
                 navigator.clipboard.writeText(String(text));
-                showCopyToast.value = true; setTimeout(() => showCopyToast.value = false, 2000);
+                importToast.value = false;
+                showCopyToast.value = true;
+                setTimeout(() => (showCopyToast.value = false), 2000);
             },
             addRow: () => {
                 const r = { isFavorite: false }; currentList.value.columns.forEach(c => r[c] = '');
