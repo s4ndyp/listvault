@@ -1,0 +1,11 @@
+# Dockhand / productie: image uit GHCR (GitHub Actions op main/beta).
+# Host-poort 8099 wordt door het Proxmox-installscript naar 80 gezet.
+
+services:
+  app:
+    image: ghcr.io/s4ndyp/listvault:latest
+    pull_policy: always
+    container_name: listvault
+    restart: unless-stopped
+    ports:
+      - "8099:80"
