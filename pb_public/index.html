@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ListVault Pro - Themeable Edition</title>
+    <title>ListVault Pro</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0F111A">
+    <meta name="theme-color" content="#120d06">
  
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -36,7 +36,7 @@
         }
     </script>
 </head>
-<body class="h-full theme-default text-gray-300 overflow-hidden" :class="currentThemeClass">
+<body class="h-full text-gray-300 overflow-hidden">
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="icon-vault" viewBox="0 0 512 512">
     <path d="M448 80V432C448 458.5 426.5 480 400 480H112C85.49 480 64 458.5 64 432V80C64 53.51 85.49 32 112 32H400C426.5 32 448 53.51 448 80zM368 256C368 220.7 339.3 192 304 192C288.7 192 274.6 197.4 263.6 206.5L200.5 143.4C191.1 134 175.9 134 166.6 143.4C157.2 152.7 157.2 167.9 166.6 177.3L229.7 240.4C220.6 251.4 215.2 265.4 215.2 280.7C215.2 316 243.9 344.7 279.3 344.7C314.6 344.7 343.3 316 343.3 280.7C343.3 265.4 337.9 251.4 328.8 240.4L351.4 217.8C361.7 228.1 368 241.3 368 256z"/>
@@ -106,16 +106,7 @@
             <button @click="showMobileMenu = false" class="md:hidden text-gray-400 p-2"><svg class="w-4 h-4 fill-current"><use href="#icon-times"></use></svg></button>
         </div>
         
-        <div class="px-4 py-2 border-b border-border">
-            <div class="text-[10px] font-bold text-gray-500 uppercase mb-2">Thema</div>
-            <div class="flex gap-2">
-                <button v-for="t in themes" :key="t.id" @click="setTheme(t.id)" 
-                        :title="t.name" :class="['w-5 h-5 rounded-full border border-white/20 transition-transform hover:scale-110', currentThemeClass === t.class ? 'ring-2 ring-white scale-110' : '']"
-                        :style="{ backgroundColor: t.preview }"></button>
-            </div>
-        </div>
-
-        <div class="p-3">
+        <div class="p-3 pt-4">
             <input v-model="sidebarSearch" placeholder="Lijst zoeken..." class="bare-input w-full bg-black/20 border border-border rounded-lg px-3 py-2 text-xs focus:border-primary transition-all text-white">
         </div>
 
@@ -351,21 +342,6 @@ createApp({
         const sortOrder = ref(1);
         const selectedRows = ref([]);
         
-        const currentThemeClass = ref('theme-default');
-        const themes = [
-            { id: 'default', name: 'Deep Purple', class: 'theme-default', preview: '#8B5CF6' },
-            { id: 'ocean', name: 'Ocean Blue', class: 'theme-ocean', preview: '#0ea5e9' },
-            { id: 'emerald', name: 'Emerald City', class: 'theme-emerald', preview: '#10b981' },
-            { id: 'amber', name: 'Classic Gold', class: 'theme-amber', preview: '#f59e0b' }
-        ];
-
-        const setTheme = (id) => {
-            const themeClass = `theme-${id}`;
-            currentThemeClass.value = themeClass;
-            localStorage.setItem('lv_theme', id);
-            document.documentElement.className = 'h-full dark ' + themeClass;
-        };
-
         const refreshLocalData = async () => {
             const data = await manager.getSmartCollection('data_lists');
             lists.value = data;
@@ -532,8 +508,7 @@ onMounted(async () => {
     await refreshLocalData();
     manager.refreshCache('data_lists');
     
-    const savedTheme = localStorage.getItem('lv_theme');
-    if (savedTheme) setTheme(savedTheme);
+    localStorage.removeItem('lv_theme');
 
     // NIEUW: Als er bij het opstarten op mobiel geen lijst geselecteerd is,
     // klap dan direct de zijbalk open.
@@ -548,7 +523,7 @@ onMounted(async () => {
             newList, newColumnNameInline, showCopyToast, sortKey, sortOrder, themes, currentThemeClass, selectedRows,
             selectList: (l) => { currentList.value = l; showMobileMenu.value = false; isEditMode.value = false; selectedRows.value = []; },
             highlight, getColumnWidth, saveCurrentList: async () => { if (currentList.value) await manager.saveSmartDocument('data_lists', currentList.value); },
-            setTheme, toggleFontSize: () => isLargeFont.value = !isLargeFont.value,
+            toggleFontSize: () => isLargeFont.value = !isLargeFont.value,
             toggleSort: (col) => { if(sortKey.value === col) sortOrder.value *= -1; else { sortKey.value = col; sortOrder.value = 1; } },
             copyText: (text) => {
                 if(!text || isEditMode.value) return;
