@@ -27,8 +27,10 @@ Uitrol via het **installatiescript in deze repo** (Xdio / [community-scripts](ht
 Op de **Proxmox host** als root:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/s4ndyp/listvault/main/scripts/listvault/listvault.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/s4ndyp/listvault/HEAD/scripts/listvault/listvault.sh)"
 ```
+
+(`HEAD` = default branch van deze repo; geen vaste branchnaam in het pad.)
 
 - Installatiescript: [scripts/listvault/listvault.sh](scripts/listvault/listvault.sh)
 - LXC-install: [scripts/install/listvault-install.sh](scripts/install/listvault-install.sh)
@@ -41,7 +43,7 @@ Optioneel vóór install op de host:
 |-----------|---------|--------------|
 | `GHCR_TOKEN` | — | Pull van privé GHCR-package |
 | `LISTVAULT_PORT` | `80` | Host-poort in de LXC |
-| `LISTVAULT_COMPOSE_URL` | `main/docker-compose.yml` op GitHub | Ander compose-bestand |
+| `LISTVAULT_COMPOSE_URL` | `HEAD/docker-compose.yml` op GitHub | Ander compose-bestand |
 
 **Update** in de container: `update`, of handmatig:
 
