@@ -75,9 +75,14 @@
 .bg-primary { background-color: var(--button-bg); }
 .border-border { border-color: var(--border-color); }
 
-.active-list-item { 
-    background-color: var(--active-item-bg); 
-    border-right: 3px solid var(--accent-color); 
+.active-list-item {
+    background-color: var(--active-item-bg);
+    border-color: var(--accent-color) !important;
+    box-shadow: inset 0 0 0 1px var(--accent-color);
+}
+
+.list-tile {
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Iconen in de zijbalk of header */
